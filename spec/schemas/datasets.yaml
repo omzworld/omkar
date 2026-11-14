@@ -141,6 +141,11 @@ tables:
     grain: one row per recurring discovery pattern
     fields: {proposal_id: string, first_seen_week: date, weeks_seen: int, pattern: string, plain_language: string, candidate_count: int, acceptance_rate: float, status: {type: string, values: [open, accepted_as_draft, dismissed]}}
 
+  hcp_stage_weekly:
+    source: Brand segmentation (stage assigned from prescribing panel and survey; added during the build)
+    grain: one row per HCP per week
+    fields: {account_id: string, week: date, stage: {type: string, values: [curiosity, consideration, experience, loyalty, advocacy]}}
+
 derived:
   feature_table:
     grain: one row per account per run week

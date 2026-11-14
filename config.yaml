@@ -1,0 +1,3 @@
+# Run settings. Business inputs (rules, constraints, assumptions, data design) live in spec/.
+seed: 2026          # every number the engine produces is reproducible from this
+data_dir: data      # generated Parquet tables (not committed to Git)

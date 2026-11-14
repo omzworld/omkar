@@ -17,6 +17,13 @@ Three additions: marketers write new rules in plain language and test them on la
 a discovery module finds risks and opportunities the rules missed, capped at 10% of what is sent each week; and
 reps receive a weekly talk track rather than a list of suggestions.
 
+## Agreed MVP scope and build decisions
+The MVP is for a client pitch and is narrower than the full brief below. `docs/decisions.md` records the agreed
+scope (what is in, simplified or deferred) and every decision that changes or adds to the spec. Read it after this file.
+The person building this has not coded for 15 years but knows SQL and object-oriented ideas: explain changes in
+those terms, prefer DuckDB SQL where it reads naturally, and end each step with something they can run and see.
+Environment: create the virtualenv with `make setup` (uv); DuckDB 2.x is installed.
+
 ## Architecture
 - Python 3.11 package `nba/` with modules: `data` (load Parquet via DuckDB), `synth` (generator), `features`,
   `rules`, `constraints`, `optimiser`, `delivery`, `feedback`, `measure`, `runner`, `api` (FastAPI), plus
