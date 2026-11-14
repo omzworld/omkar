@@ -1,10 +1,14 @@
 // Reusable building blocks: cards, stat tiles, tables, buttons, and two small SVG charts.
 import { useState } from "react";
+import { motion } from "motion/react";
 import { num } from "./api";
+import { CountUp, Tilt } from "./fx.jsx";
 
 export function Card({ title, subtitle, children, actions, className = "" }) {
   return (
-    <section className={`min-w-0 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 ${className}`}>
+    <motion.section initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className={`glass glow-hover min-w-0 rounded-2xl p-5 ${className}`}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -15,28 +19,30 @@ export function Card({ title, subtitle, children, actions, className = "" }) {
         </div>
       )}
       {children}
-    </section>
+    </motion.section>
   );
 }
 
 export function Stat({ label, value, note, tone }) {
-  const color = tone === "good" ? "text-[var(--good-ink)]" : tone === "bad" ? "text-[var(--bad)]" : "";
+  const color = tone === "good" ? "text-[var(--good-ink)]" : tone === "bad" ? "text-[var(--bad)]" : "text-[var(--ink)]";
+  const bar = tone === "good" ? "var(--good)" : tone === "bad" ? "var(--bad)" : "var(--accent)";
   return (
-    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+    <Tilt max={6} className="glass glow-hover overflow-hidden rounded-2xl p-4">
+      <span aria-hidden className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${bar}, transparent)` }} />
       <div className="text-sm text-[var(--ink-2)]">{label}</div>
-      <div className={`tabular mt-1 text-2xl font-semibold ${color}`}>{value}</div>
+      <div className={`display tabular mt-1 text-2xl font-semibold ${color}`}>{typeof value === "string" || typeof value === "number" ? <CountUp value={value} /> : value}</div>
       {note && <div className="mt-1 text-xs text-[var(--muted)]">{note}</div>}
-    </div>
+    </Tilt>
   );
 }
 
 export function Button({ children, onClick, disabled, kind = "primary", type = "button" }) {
   const styles = kind === "primary"
-    ? "bg-[var(--accent)] text-white hover:opacity-90"
-    : "border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)] hover:bg-[var(--chip)]";
+    ? "btn-primary font-semibold"
+    : "border border-[var(--line)] bg-[var(--chip)] text-[var(--ink)] hover:border-[var(--accent)] hover:text-[var(--accent)]";
   return (
     <button type={type} onClick={onClick} disabled={disabled}
-      className={`rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}>
+      className={`rounded-xl px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}>
       {children}
     </button>
   );
@@ -61,7 +67,7 @@ export function Status({ passed }) {
 export function Table({ columns, rows, empty = "Nothing to show.", maxHeight }) {
   if (!rows || rows.length === 0) return <p className="text-sm text-[var(--muted)]">{empty}</p>;
   return (
-    <div className="overflow-auto rounded-lg border border-[var(--line)]" style={maxHeight ? { maxHeight } : undefined}>
+    <div className="overflow-auto rounded-xl border border-[var(--line)] bg-black/10" style={maxHeight ? { maxHeight } : undefined}>
       <table className="w-full border-collapse text-sm">
         <thead className="sticky top-0 bg-[var(--raised)]">
           <tr>
@@ -74,7 +80,7 @@ export function Table({ columns, rows, empty = "Nothing to show.", maxHeight }) 
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--chip)]/50">
+            <tr key={i} className="border-b border-[var(--line)] transition-colors last:border-0 hover:bg-[var(--accent-soft)]">
               {columns.map((c) => (
                 <td key={c.key} className={`px-3 py-2 align-top ${c.num ? "tabular whitespace-nowrap text-right" : ""} ${c.wide ? "min-w-[18rem]" : ""}`}>
                   {c.render ? c.render(r) : r[c.key] ?? "–"}
@@ -103,7 +109,7 @@ export const inputClass =
 
 export function Message({ children, tone = "neutral" }) {
   const border = tone === "bad" ? "border-[var(--bad)]" : tone === "good" ? "border-[var(--good)]" : "border-[var(--line)]";
-  return <div className={`rounded-lg border ${border} bg-[var(--raised)] px-4 py-3 text-sm`}>{children}</div>;
+  return <div className={`glass rounded-xl border ${border} px-4 py-3 text-sm`}>{children}</div>;
 }
 
 // ------------------------------------------------------------------------------------- charts
@@ -119,8 +125,9 @@ export function Bars({ data, label, value, format = (v) => num(v), color = "var(
           onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
           <span className="truncate text-[var(--ink-2)]" title={d[label]}>{d[label]}</span>
           <div className="relative h-5">
-            <div className="absolute inset-y-1 left-0 rounded-r-[4px] transition-opacity"
-              style={{ width: `${Math.max((100 * d[value]) / max, 0.5)}%`, background: color, opacity: hover === null || hover === i ? 1 : 0.55 }} />
+            <div className="bar-grow absolute inset-y-1 left-0 rounded-r-[4px] transition-opacity"
+              style={{ width: `${Math.max((100 * d[value]) / max, 0.5)}%`, background: `linear-gradient(90deg, color-mix(in srgb, ${color} 35%, transparent), ${color})`,
+                boxShadow: `0 0 12px color-mix(in srgb, ${color} 45%, transparent)`, opacity: hover === null || hover === i ? 1 : 0.55, animationDelay: `${i * 40}ms` }} />
           </div>
           <span className="tabular w-20 text-right text-[var(--ink)]">{format(d[value])}{unit}</span>
         </div>
@@ -180,7 +187,8 @@ export function Lines({ data, x, series, height = 260, yLabel, shadeFrom }) {
             const label = ends.find((e) => e.s === s);
             return (
               <g key={s.key}>
-                <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                <polyline className="line-draw" pathLength="1" points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                  style={{ filter: `drop-shadow(0 0 6px ${s.color})` }} />
                 <text x={pts[pts.length - 1][0] + 10} y={label.y} fontSize="12" fill="var(--ink-2)">{s.label}</text>
               </g>
             );
