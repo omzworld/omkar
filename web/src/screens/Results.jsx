@@ -69,12 +69,12 @@ export default function Results({ pilot, runPilot }) {
         {/* The verdict */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE }}
           className="glass relative overflow-hidden rounded-3xl p-6 md:p-8">
-          <div aria-hidden className="absolute -right-24 -top-24 h-72 w-72 rounded-full blur-3xl" style={{ background: m.lift.lift_pts > 0 ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)" }} />
+          <div aria-hidden className="absolute -right-24 -top-24 h-72 w-72 rounded-full blur-3xl" style={{ background: m.lift.lift_pts > 0 ? "rgba(79,209,161,0.25)" : "rgba(255,107,107,0.25)" }} />
           <div className="relative grid items-center gap-6 lg:grid-cols-[auto_1fr]">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Brick sales lift, test vs control</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-2)]">Brick sales lift, test vs control</div>
               <div className={`display tabular mt-1 text-6xl font-semibold md:text-7xl ${m.lift.lift_pts > 0 ? "text-[var(--good-ink)]" : "text-[var(--bad)]"}`}
-                style={{ textShadow: `0 0 40px ${m.lift.lift_pts > 0 ? "rgba(52,211,153,0.5)" : "rgba(248,113,113,0.5)"}` }}>
+                style={{ textShadow: `0 0 40px ${m.lift.lift_pts > 0 ? "rgba(79,209,161,0.5)" : "rgba(255,107,107,0.5)"}` }}>
                 <CountUp value={`${m.lift.lift_pts >= 0 ? "+" : ""}${num(m.lift.lift_pts, 1)}`} /><span className="text-3xl"> pts</span>
               </div>
               <div className="mt-1 text-sm text-[var(--ink-2)]">{m.lift.first_month} to {m.lift.last_month}, against the months before</div>
@@ -202,8 +202,8 @@ function Gate({ g, i }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.25, duration: 0.5, ease: EASE }}
       className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-black/20 p-3">
-      <motion.span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-[#04111c]"
-        initial={{ scale: 0, backgroundColor: "rgba(140,170,230,0.2)" }} whileInView={{ scale: 1, backgroundColor: g.passed ? "#34d399" : "#f87171" }}
+      <motion.span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-[#ffffff]"
+        initial={{ scale: 0, backgroundColor: "rgba(140,140,160,0.2)" }} whileInView={{ scale: 1, backgroundColor: g.passed ? "#4fd1a1" : "#ff6b6b" }}
         viewport={{ once: true }} transition={{ delay: 0.45 + i * 0.25, type: "spring", stiffness: 300, damping: 15 }}
         style={{ boxShadow: `0 0 18px -2px ${color}` }}>{g.passed ? "✓" : "✕"}</motion.span>
       <div className="min-w-0 flex-1">

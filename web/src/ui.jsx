@@ -39,10 +39,10 @@ export function Stat({ label, value, note, tone }) {
 export function Button({ children, onClick, disabled, kind = "primary", type = "button" }) {
   const styles = kind === "primary"
     ? "btn-primary font-semibold"
-    : "border border-[var(--line)] bg-[var(--chip)] text-[var(--ink)] hover:border-[var(--accent)] hover:text-[var(--accent)]";
+    : "border border-[var(--axis)] bg-transparent text-[var(--ink)] hover:border-[var(--muted)]";
   return (
     <button type={type} onClick={onClick} disabled={disabled}
-      className={`rounded-xl px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}>
+      className={`rounded-full px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}>
       {children}
     </button>
   );

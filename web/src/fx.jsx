@@ -16,7 +16,7 @@ export function Backdrop() {
 }
 
 // Wraps any element so it tilts towards the mouse in 3D and lifts slightly, with a soft light spot.
-export function Tilt({ children, className = "", max = 8, as = "div", ...rest }) {
+export function Tilt({ children, className = "", max = 4, as = "div", ...rest }) {
   const x = useMotionValue(0.5);
   const y = useMotionValue(0.5);
   const sx = useSpring(x, { stiffness: 200, damping: 18 });
@@ -24,14 +24,14 @@ export function Tilt({ children, className = "", max = 8, as = "div", ...rest })
   const rotateX = useTransform(sy, [0, 1], [max, -max]);
   const rotateY = useTransform(sx, [0, 1], [-max, max]);
   const light = useTransform([sx, sy], ([a, b]) =>
-    `radial-gradient(22rem circle at ${a * 100}% ${b * 100}%, rgba(34,211,238,0.12), transparent 45%)`);
+    `radial-gradient(22rem circle at ${a * 100}% ${b * 100}%, rgba(106,109,255,0.12), transparent 45%)`);
   const M = motion[as];
   return (
     <M
       {...rest}
       className={`relative ${className}`}
       style={{ rotateX, rotateY, transformPerspective: 900, transformStyle: "preserve-3d", ...(rest.style || {}) }}
-      whileHover={{ scale: 1.02, y: -3 }}
+      whileHover={{ scale: 1.01, y: -2 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
       onMouseMove={(e) => {
         const r = e.currentTarget.getBoundingClientRect();

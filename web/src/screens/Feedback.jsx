@@ -110,7 +110,7 @@ export default function Feedback({ pilot, runPilot }) {
                 const ok = approved[p.rule_id];
                 return (
                   <motion.div key={p.rule_id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
-                    className={`relative overflow-hidden rounded-2xl border p-4 transition ${ok ? "border-[var(--good)] bg-[rgba(52,211,153,0.08)]" : "border-[rgba(167,139,250,0.4)] bg-[rgba(167,139,250,0.06)] shadow-[0_0_30px_-12px_var(--accent-2)]"}`}>
+                    className={`relative overflow-hidden rounded-2xl border p-4 transition ${ok ? "border-[var(--good)] bg-[rgba(79,209,161,0.08)]" : "border-[rgba(255,143,122,0.4)] bg-[rgba(255,143,122,0.06)] shadow-[0_0_30px_-12px_var(--accent-2)]"}`}>
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="max-w-3xl">
                         <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +135,7 @@ export default function Feedback({ pilot, runPilot }) {
                       </div>
                       {ok ? (
                         <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2 font-semibold text-[var(--good-ink)]">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--good)] text-[#04111c]">✓</span>Version {ok.version}
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--good)] text-[#ffffff]">✓</span>Version {ok.version}
                         </motion.div>
                       ) : (
                         <Button onClick={() => approve(p.rule_id)}>{Object.keys(p.proposed || {}).length ? "Approve the change" : "Approve: pause the rule"}</Button>
@@ -199,7 +199,7 @@ function WeekColumns({ weeks }) {
             return (
               <div key={i} className="group relative flex h-full flex-1 items-end">
                 <motion.div className="w-full rounded-t-md" title={`Week ${i + 1}: ${pct(w.acceptance_pct, 0)}`}
-                  style={{ background: ok ? "linear-gradient(to top, rgba(52,211,153,0.2), #34d399)" : "linear-gradient(to top, rgba(248,113,113,0.2), #f87171)", boxShadow: `0 0 12px -2px ${ok ? "#34d399" : "#f87171"}` }}
+                  style={{ background: ok ? "linear-gradient(to top, rgba(79,209,161,0.2), #4fd1a1)" : "linear-gradient(to top, rgba(255,107,107,0.2), #ff6b6b)", boxShadow: `0 0 12px -2px ${ok ? "#4fd1a1" : "#ff6b6b"}` }}
                   initial={{ height: 0 }} animate={{ height: `${(100 * Math.min(w.acceptance_pct, top)) / top}%` }} transition={{ delay: i * 0.05, duration: 0.7, ease: [0.16, 1, 0.3, 1] }} />
                 <span className="tabular pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-[var(--ink-2)] opacity-0 transition group-hover:opacity-100">{num(w.acceptance_pct, 0)}%</span>
               </div>

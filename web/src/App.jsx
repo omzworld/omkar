@@ -55,7 +55,7 @@ export default function App() {
       <div className="relative z-10 min-h-screen md:grid md:grid-cols-[17rem_1fr]">
         <aside className="glass border-0 border-b border-[var(--line)] p-4 md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r">
           <button onClick={() => go("home")} className="group mb-6 flex items-center gap-3 text-left">
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-2)] text-[#04111c] shadow-[0_0_24px_-4px_var(--accent)] transition group-hover:rotate-12">
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-[#ffffff] shadow-[0_0_24px_-4px_var(--accent)] transition group-hover:rotate-12">
               <span className="display text-sm font-bold">N</span>
             </span>
             <span>
@@ -70,11 +70,11 @@ export default function App() {
                 <button key={s.id} onClick={() => go(s.id)}
                   className={`relative rounded-xl px-3 py-2 text-left text-sm transition ${active ? "text-[var(--ink)]" : "text-[var(--ink-2)] hover:bg-[var(--chip)] hover:text-[var(--ink)]"}`}>
                   {active && (
-                    <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl border border-[rgba(34,211,238,0.35)] bg-[var(--accent-soft)] shadow-[0_0_24px_-8px_var(--accent)]"
+                    <motion.span layoutId="nav-active" className="absolute inset-0 rounded-r-lg rounded-l-none border-l-2 border-[var(--accent-2)] bg-[var(--chip)]"
                       transition={{ type: "spring", stiffness: 400, damping: 32 }} />
                   )}
                   <span className="relative flex items-start gap-2.5">
-                    <span className={`mt-px w-4 text-center ${active ? "text-[var(--accent)]" : "text-[var(--muted)]"}`} aria-hidden>{s.icon}</span>
+                    <span className={`mt-px w-4 text-center ${active ? "text-[var(--accent-2)]" : "text-[var(--muted)]"}`} aria-hidden>{s.icon}</span>
                     <span>
                       <span className={active ? "font-medium" : ""}>{i > 0 && <span className="tabular mr-1.5 text-[var(--muted)]">{i}</span>}{s.label}</span>
                       <span className="hidden text-xs font-normal text-[var(--muted)] md:block">{s.hint}</span>
@@ -93,7 +93,7 @@ export default function App() {
               </span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--chip)]">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)]"
+              <motion.div className="h-full rounded-full bg-[var(--accent)]"
                 animate={{ width: `${(100 * (pilot?.running ? pilot.week : done)) / total}%` }} transition={{ duration: 0.8 }} />
             </div>
             <div className="mt-1.5">

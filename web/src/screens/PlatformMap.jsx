@@ -84,12 +84,12 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
 
       {/* Controls along the top */}
       <div className="absolute inset-x-0 top-0 z-20 flex flex-wrap items-center justify-between gap-2 p-4 md:p-5">
-        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-2)]">
           {focus === null ? "Live platform map · week 1" : `Stage ${focus + 1} of ${STAGES.length}`}
         </div>
         <div className="flex gap-2">
           {focus !== null && (
-            <button onClick={back} className="rounded-xl border border-[var(--line)] bg-[var(--chip)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)] hover:text-[var(--accent)]">
+            <button onClick={back} className="rounded-full border border-[var(--axis)] px-3 py-1.5 text-xs font-medium hover:border-[var(--muted)]">
               ⤢ Zoom out to the map
             </button>
           )}
@@ -109,12 +109,12 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
           <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full" aria-hidden>
             <defs>
               <radialGradient id="core" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.95" />
-                <stop offset="45%" stopColor="#22d3ee" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+                <stop offset="0%" stopColor="#8a8dff" stopOpacity="0.95" />
+                <stop offset="45%" stopColor="#6a6dff" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#6a6dff" stopOpacity="0" />
               </radialGradient>
               <linearGradient id="loop" x1="0" x2="1">
-                <stop offset="0%" stopColor="#22d3ee" /><stop offset="50%" stopColor="#a78bfa" /><stop offset="100%" stopColor="#22d3ee" />
+                <stop offset="0%" stopColor="#6a6dff" /><stop offset="50%" stopColor="#ff8f7a" /><stop offset="100%" stopColor="#6a6dff" />
               </linearGradient>
               <filter id="soft"><feGaussianBlur stdDeviation="3" /></filter>
             </defs>
@@ -123,19 +123,19 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
             <path d={LOOP} fill="none" stroke="url(#loop)" strokeWidth="1.6" className="dash-flow" opacity="0.8" />
             {/* Spokes from the engine to each stage */}
             {POS.map((p, i) => (
-              <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#22d3ee" strokeOpacity="0.18" strokeWidth="1" className="dash-flow" />
+              <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#6a6dff" strokeOpacity="0.18" strokeWidth="1" className="dash-flow" />
             ))}
             {/* Data particles travelling round the loop */}
             {Array.from({ length: 10 }, (_, i) => (
-              <circle key={i} r={i % 3 === 0 ? 4 : 2.5} fill={i % 2 ? "#a78bfa" : "#67e8f9"} style={{ filter: "drop-shadow(0 0 6px #22d3ee)" }}>
+              <circle key={i} r={i % 3 === 0 ? 4 : 2.5} fill={i % 2 ? "#ff8f7a" : "#8a8dff"} style={{ filter: "drop-shadow(0 0 6px #6a6dff)" }}>
                 <animateMotion dur="12s" repeatCount="indefinite" begin={`${-i * 1.2}s`} path={LOOP} />
               </circle>
             ))}
             {/* The engine at the centre: glow and counter-rotating rings */}
             <circle cx={CX} cy={CY} r="110" fill="url(#core)" className="node-pulse" style={{ transformOrigin: `${CX}px ${CY}px` }} />
-            <g className="spin-slow"><circle cx={CX} cy={CY} r="78" fill="none" stroke="#22d3ee" strokeOpacity="0.5" strokeDasharray="2 10" strokeWidth="2" /></g>
-            <g className="spin-slow-rev"><circle cx={CX} cy={CY} r="94" fill="none" stroke="#a78bfa" strokeOpacity="0.45" strokeDasharray="40 14 4 14" strokeWidth="1.2" /></g>
-            <circle cx={CX} cy={CY} r="58" fill="#06101f" stroke="#22d3ee" strokeOpacity="0.6" />
+            <g className="spin-slow"><circle cx={CX} cy={CY} r="78" fill="none" stroke="#6a6dff" strokeOpacity="0.5" strokeDasharray="2 10" strokeWidth="2" /></g>
+            <g className="spin-slow-rev"><circle cx={CX} cy={CY} r="94" fill="none" stroke="#ff8f7a" strokeOpacity="0.45" strokeDasharray="40 14 4 14" strokeWidth="1.2" /></g>
+            <circle cx={CX} cy={CY} r="58" fill="#0b0b0f" stroke="#6a6dff" strokeOpacity="0.6" />
           </svg>
 
           {/* Centre label */}
@@ -155,10 +155,10 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
               <span className="relative flex h-12 w-12 items-center justify-center md:h-16 md:w-16">
                 <span className="node-pulse absolute inset-0 rounded-full bg-[var(--accent)]/25 blur-md" style={{ animationDelay: `${i * 0.5}s` }} />
-                <span className="relative flex h-full w-full items-center justify-center rounded-full border border-[rgba(34,211,238,0.5)] bg-[#081426] text-[var(--accent)] shadow-[0_0_24px_-4px_var(--accent)] transition group-hover:border-[var(--accent)] group-hover:bg-[#0b2238] group-hover:shadow-[0_0_36px_0_var(--accent)]">
+                <span className="relative flex h-full w-full items-center justify-center rounded-full border border-[rgba(106,109,255,0.5)] bg-[#141418] text-[var(--accent)] shadow-[0_0_24px_-4px_var(--accent)] transition group-hover:border-[var(--accent)] group-hover:bg-[#1d2056] group-hover:shadow-[0_0_36px_0_var(--accent)]">
                   <StageIcon i={i} />
                 </span>
-                <span className="display tabular absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent-2)] text-[10px] font-bold text-[#04111c]">{i + 1}</span>
+                <span className="display tabular absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-bold text-[#ffffff]">{i + 1}</span>
               </span>
               <span className="display mt-2 text-xs font-semibold leading-tight md:text-sm">{s.title}</span>
               <span className="mt-1 hidden rounded-full border border-[var(--line)] bg-black/30 px-2 py-0.5 text-[11px] text-[var(--ink-2)] transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] sm:inline-block">{chips[i]}</span>
@@ -183,7 +183,7 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
             <div className="grid gap-8 lg:grid-cols-[1fr_1.15fr]">
               <div>
                 <div className="flex items-center gap-3">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(34,211,238,0.5)] bg-[#081426] text-[var(--accent)] shadow-[0_0_30px_-4px_var(--accent)]"><StageIcon i={focus} big /></span>
+                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(106,109,255,0.5)] bg-[#141418] text-[var(--accent)] shadow-[0_0_30px_-4px_var(--accent)]"><StageIcon i={focus} big /></span>
                   <span className="display text-sm text-[var(--muted)]">Step {focus + 1}</span>
                 </div>
                 <h3 className="text-gradient mt-4 text-3xl font-semibold md:text-4xl">{STAGES[focus].title}</h3>
@@ -207,7 +207,7 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
 
       {/* Step controls while zoomed in, with tour progress */}
       {focus !== null && (
-        <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t border-[var(--line)] bg-[#050913]/80 px-4 py-3 backdrop-blur md:px-6">
+        <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t border-[var(--line)] bg-[#0b0b0f]/80 px-4 py-3 backdrop-blur md:px-6">
           <button onClick={() => step(-1)} className="rounded-lg px-3 py-1.5 text-sm text-[var(--ink-2)] hover:text-[var(--accent)]">← {narrow ? "Previous" : STAGES[(focus + 5) % 6].title}</button>
           <div className="flex items-center gap-2">
             {STAGES.map((s, i) => (

@@ -44,11 +44,11 @@ export default function Home({ pilot, go, screens }) {
       {/* Opening banner */}
       <section className="relative pt-4 md:pt-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 rounded-full border border-[rgba(34,211,238,0.35)] bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)]" />
+          className="kicker inline-flex items-center gap-2.5">
+          <span className="h-px w-6 bg-[var(--accent-2)]" />
           Pharma omnichannel · Next best action engine
         </motion.div>
-        <h1 className="display mt-6 max-w-4xl text-4xl font-semibold leading-[1.05] md:text-6xl">
+        <h1 className="display mt-6 max-w-4xl text-4xl font-bold leading-[1.02] tracking-[-0.03em] md:text-6xl">
           {HEADLINE.map((w, i) => (
             <motion.span key={i} className={`mr-[0.25em] inline-block ${i >= 5 ? "text-gradient" : ""}`}
               initial={{ opacity: 0, y: 30, rotateX: -60 }} animate={{ opacity: 1, y: 0, rotateX: 0 }}
@@ -62,9 +62,9 @@ export default function Home({ pilot, go, screens }) {
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="mt-8 flex flex-wrap gap-3">
           <button onClick={() => document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="btn-primary rounded-xl px-5 py-3 text-sm">See how it works ↓</button>
+            className="btn-primary px-6 py-3 text-sm font-semibold">See how it works ↓</button>
           <button onClick={() => go("readiness")}
-            className="rounded-xl border border-[var(--line)] bg-[var(--chip)] px-5 py-3 text-sm font-semibold transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
+            className="rounded-full border border-[var(--axis)] bg-transparent px-6 py-3 text-sm font-semibold transition hover:border-[var(--muted)]">
             Start the demo →
           </button>
         </motion.div>
@@ -101,7 +101,7 @@ export default function Home({ pilot, go, screens }) {
           {DIFFERENT.map((d, i) => (
             <Reveal key={d.title} delay={i * 0.08} className="h-full">
               <Tilt className="glass glow-hover h-full rounded-2xl p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent)]/25 to-[var(--accent-2)]/25 text-base font-semibold text-[var(--accent)] ring-1 ring-[rgba(34,211,238,0.35)]" aria-hidden>{d.icon}</div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent)]/25 to-[var(--accent-2)]/25 text-base font-semibold text-[var(--accent)] ring-1 ring-[rgba(106,109,255,0.35)]" aria-hidden>{d.icon}</div>
                 <div className="display mt-4 font-semibold">{d.title}</div>
                 <p className="mt-1.5 text-sm text-[var(--ink-2)]">{d.text}</p>
               </Tilt>
@@ -134,7 +134,7 @@ export default function Home({ pilot, go, screens }) {
               <div className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Pilot progress</div>
               <div className="display tabular mt-2 text-4xl font-semibold"><span className="text-gradient">{done}</span><span className="text-lg text-[var(--muted)]"> / {total} weeks</span></div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--chip)]" role="progressbar" aria-valuenow={done} aria-valuemin={0} aria-valuemax={total}>
-                <motion.div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] shadow-[0_0_12px_var(--accent)]"
+                <motion.div className="h-full rounded-full bg-[var(--accent)] shadow-[0_0_12px_var(--accent)]"
                   initial={{ width: 0 }} animate={{ width: `${(100 * done) / total}%` }} transition={{ duration: 1 }} />
               </div>
               <p className="mt-3 text-sm text-[var(--ink-2)]">
@@ -164,8 +164,8 @@ export default function Home({ pilot, go, screens }) {
 function SectionHead({ eyebrow, title, text }) {
   return (
     <div className="mb-6">
-      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{eyebrow}</div>
-      <h2 className="mt-2 text-2xl font-semibold md:text-3xl">{title}</h2>
+      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-2)]">{eyebrow}</div>
+      <h2 className="mt-2 text-3xl font-bold leading-tight md:text-4xl">{title}</h2>
       {text && <p className="mt-2 max-w-2xl text-[var(--ink-2)]">{text}</p>}
     </div>
   );
