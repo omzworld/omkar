@@ -39,7 +39,8 @@ guideline_update_days_ago, nhs_waiting_list_signal, tender_window_days, readmiss
 unit_id, unit_tier, unit_procedure_volume_qoq_pct, unit_competitor_share_change, inadequate_prep_rate_reported,
 unit_quality_audit_due_days, screening_programme_expansion, new_endoscopist_joined, liver_unit_flag,
 discharge_pathway_project, treatment_centre_flag, patient_identified_signal, patient_organisation_event_days,
-hub_enrolment_pending, msl_contact_completed, advocacy_candidate, care_home_prescriber, paediatric_prescriber
+hub_enrolment_pending, msl_contact_completed, advocacy_candidate, care_home_prescriber, paediatric_prescriber,
+unit_colonoscopies_qtr (procedures last quarter; added during the build for the Plenvu/Moviprep value of response)
 
 ## Cadence limits (looked up from cadence.csv by segment; added during the build)
 cap_touches_month, min_gap_days_any, min_gap_days_rep_visit, min_gap_days_email, gap_after_two_ignored_days,

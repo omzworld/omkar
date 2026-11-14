@@ -1,4 +1,4 @@
-"""Command line: `nba synth`, `nba readiness`, `nba features`, `nba lint`, `nba triggers`."""
+"""Command line: `nba synth`, `nba readiness`, `nba features`, `nba lint`, `nba triggers`, `nba week`."""
 from __future__ import annotations
 
 import pandas as pd
@@ -62,6 +62,16 @@ def lint():
     raise typer.Exit(1 if problems else 0)
 
 
+def _overrides(items: list[str] | None) -> dict:
+    """['R075.decline_pct=6'] -> {'R075': {'decline_pct': 6}}"""
+    overrides: dict = {}
+    for item in items or []:
+        key, value = item.split("=", 1)
+        rule_id, param = key.split(".", 1)
+        overrides.setdefault(rule_id, {})[param] = float(value) if "." in value else int(value)
+    return overrides
+
+
 @app.command()
 def triggers(week: int = typer.Option(1, help="Pilot week."),
              set_: list[str] = typer.Option(None, "--set", help="Override a rule parameter, e.g. R075.decline_pct=6"),
@@ -73,11 +83,7 @@ def triggers(week: int = typer.Option(1, help="Pilot week."),
         f = feat.load_snapshot(week)
     except FileNotFoundError:
         f = feat.build(week)
-    overrides: dict = {}
-    for item in set_ or []:
-        key, value = item.split("=", 1)
-        rule_id, param = key.split(".", 1)
-        overrides.setdefault(rule_id, {})[param] = float(value) if "." in value else int(value)
+    overrides = _overrides(set_)
     base = engine.raise_triggers(f)
     tr = engine.raise_triggers(f, overrides) if overrides else base
     typer.echo(f"Week {week}: {len(tr):,} triggers from {tr.rule_id.nunique()} rules "
@@ -93,6 +99,31 @@ def triggers(week: int = typer.Option(1, help="Pilot week."),
     if rule:
         typer.echo(f"\nTriggers for {rule}:")
         typer.echo(tr[tr.rule_id == rule][["hcp_id", "market", "territory_id", "reason"]].to_string(index=False))
+
+
+@app.command()
+def week(week: int = typer.Option(1, help="Pilot week."),
+         dial: float = typer.Option(1.0, help="Rules-to-score dial: 0 = rule priority decides, 1 = expected return decides."),
+         set_: list[str] = typer.Option(None, "--set", help="Override a rule parameter, e.g. R075.decline_pct=6"),
+         top: int = typer.Option(15, help="How many sent actions to list.")):
+    """Run one week: triggers, constraint verdicts, optimiser decisions, with reasons (demo scene 3)."""
+    from nba import pipeline
+    r = pipeline.run_week(week, _overrides(set_), dial=dial)
+    s = pipeline.summary(r)
+    typer.echo("WEEKLY RUN SUMMARY\n" + "=" * 40)
+    for k, v in s["headline"].items():
+        typer.echo(f"{k:<45}{v:,}" if isinstance(v, (int, float)) and not isinstance(v, bool) else f"{k:<45}{v}")
+    typer.echo("\n1. Held back by a constraint (candidate actions, physicians, example reason)")
+    typer.echo(s["constraints"].to_string(index=False))
+    typer.echo("\n2. Sent, by channel (expected return in EUR; average chance of response)")
+    typer.echo(s["by_channel"].to_string(index=False))
+    typer.echo("\n3. Allowed but not sent, and why")
+    typer.echo(s["not_sent"].to_string(index=False))
+    typer.echo(f"\n4. Top {top} actions by expected return")
+    typer.echo(pipeline.top_list(r, top).to_string(index=False))
+    typer.echo("\n5. By rule")
+    typer.echo(s["by_rule"].to_string(index=False))
+    typer.echo(f"\nSaved to {spec.data_dir() / 'runs' / f'week_{week:02d}'}")
 
 
 if __name__ == "__main__":

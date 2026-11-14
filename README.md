@@ -10,8 +10,8 @@ are in `docs/decisions.md`.
 |---|---|---|
 | 1 | Project setup, schemas, synthetic data generator, data readiness report | Done |
 | 2 | Feature table and rules engine | Done |
-| 3 | Constraints and optimiser | Next |
-| 4 | Delivery, talk tracks, feedback simulator, 26-week runner | |
+| 3 | Constraints and optimiser | Done |
+| 4 | Delivery, talk tracks, feedback simulator, 26-week runner | Next |
 | 5 | Measurement, return model, API, web screens | |
 | 6 | Plain-language rule writing and quick impact test | |
 | 7 | Discovery (change detection) with the 10% cap | |
@@ -50,11 +50,17 @@ Then, for a pilot week:
 .venv/bin/nba lint
 ```
 
+```bash
+.venv/bin/nba week --week 1 --dial 1
+```
+
 `make synth` writes about 550,000 rows across 25 tables to `data/` in a few seconds. `make readiness` prints the
 data readiness report (demo scene 1) and saves it to `data/readiness.json`. `nba features` builds the
 week's feature table (one row per account, 133 columns) and saves a snapshot. `nba triggers` runs the enabled
 rules and shows what fired and why; `--set` previews a threshold change (demo scene 2). `nba lint` checks every
-rule in the catalogue.
+rule in the catalogue. `nba week` runs the whole week (triggers, constraint verdicts, optimiser) and prints what was
+held back and why, what is sent by channel, and the top actions by expected return; `--dial 0` shows what a
+rules-only engine would send (demo scene 3).
 
 ## Look at the data with SQL
 
@@ -77,6 +83,10 @@ nba/            the engine (Python package)
   columns.py    the column dictionary, read from spec/schemas/feature_columns.md
   features/     the weekly feature table (touch history, market signals, consent) in DuckDB SQL
   rules/        expr.py (safe condition evaluator), catalogue.py (load, parameters, linter), engine.py (triggers)
+  candidates.py triggers to candidate actions (channel, theme, asset)
+  constraints.py allowed, delayed or blocked, naming the constraint
+  optimiser.py  chance, value, cost, expected return; capacity, substitution, the rules-to-score dial
+  pipeline.py   one weekly run and its summary
   cli.py        the `nba` command
 spec/           business specification (authority for rules, constraints, schemas, assumptions)
 tests/          automated tests (pytest)

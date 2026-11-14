@@ -81,7 +81,8 @@ with q as (
 select a.hco_id as unit_id,
        round(100 * (a.colonoscopies / nullif(b.colonoscopies, 0) - 1), 1)            as unit_procedure_volume_qoq_pct,
        round(100 * (b.norgine_prep_share - a.norgine_prep_share), 1)                 as unit_competitor_share_change,
-       round(100 * a.inadequate_prep_rate, 1)                                         as inadequate_prep_rate_reported
+       round(100 * a.inadequate_prep_rate, 1)                                         as inadequate_prep_rate_reported,
+       a.colonoscopies                                                                as unit_colonoscopies_qtr
 from q a join q b on a.hco_id = b.hco_id and a.r = 1 and b.r = 2
 """
 

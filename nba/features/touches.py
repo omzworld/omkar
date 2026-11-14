@@ -171,9 +171,18 @@ from t group by 1, 2
 """
 
 
+# Touches and responses per account and channel: the physician's own history for the chance of response.
+CHANNEL_STATS = """
+select account_id as hcp_id, channel, count(*) as touches, count(*) filter (where responded) as responses,
+       count(*) filter (where ts >= date_trunc('month', $as_of::timestamp)) as touches_this_month
+from touch_log where ts < $as_of and channel <> 'event' group by 1, 2
+"""
+
+
 def build(con: duckdb.DuckDBPyConnection, as_of: pd.Timestamp) -> dict[str, pd.DataFrame]:
     con.execute(TOUCH_LOG)
     p = {"as_of": as_of.date()}
     return {name: con.execute(sql, p).df() for name, sql in
             [("touches", TOUCH_FEATURES), ("kam", KAM), ("media", MEDIA), ("events", EVENTS),
-             ("stages", STAGES), ("stage_last_qtr", STAGE_LAST_QUARTER), ("themes", THEMES)]}
+             ("stages", STAGES), ("stage_last_qtr", STAGE_LAST_QUARTER), ("themes", THEMES),
+             ("channel_stats", CHANNEL_STATS)]}

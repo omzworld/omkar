@@ -25,6 +25,8 @@ stage_move_value:           # extra units per year when one physician moves one 
     UK: {consideration_to_experience: 900, experience_to_loyalty: 1500}
     DE: {consideration_to_experience: 850, experience_to_loyalty: 1400}
 
+value_horizon_years: 2       # added during the build: years a stage move keeps paying back (stage_move_value is per year)
+
 risk_value:                 # value at risk for risk triggers
   brick_decline: 0.6        # share of the brick's prior-quarter decline attributable to the trigger HCPs
   competitor_share_point: 40

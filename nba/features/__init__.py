@@ -47,7 +47,8 @@ class Features:
     as_of: pd.Timestamp
     table: pd.DataFrame       # one row per account
     themes: pd.DataFrame      # one row per (hcp_id, theme) received
-    variants: pd.DataFrame    # approved asset variants per (market, theme, channel)
+    variants: pd.DataFrame    # approved asset variants per (market, brand, theme, channel)
+    channel_stats: pd.DataFrame = None  # touches and responses per (hcp_id, channel), for the chance of response
 
     def context(self) -> Context:
         return Context(themes=self.themes, variants=self.variants)
@@ -188,7 +189,7 @@ def build(week: int, data_dir: Path | None = None, save: bool = True) -> Feature
         select market, product as brand, content_theme, channel, count(*) as n from promomats_document
         where status = 'approved' and approval_date < $w and expiration_date > $w group by all
     """, {"w": when.date()}).df()
-    feats = Features(week, when, table, t["themes"], variants)
+    feats = Features(week, when, table, t["themes"], variants, t["channel_stats"])
     if save:
         save_snapshot(feats, data_dir)
     return feats
@@ -204,10 +205,12 @@ def save_snapshot(feats: Features, data_dir: Path | None = None) -> None:
     feats.table.to_parquet(d / f"features_w{feats.week:02d}.parquet", index=False)
     feats.themes.to_parquet(d / f"themes_w{feats.week:02d}.parquet", index=False)
     feats.variants.to_parquet(d / f"variants_w{feats.week:02d}.parquet", index=False)
+    feats.channel_stats.to_parquet(d / f"channels_w{feats.week:02d}.parquet", index=False)
 
 
 def load_snapshot(week: int, data_dir: Path | None = None) -> Features:
     d = _snap_dir(data_dir)
     return Features(week, as_of(week), pd.read_parquet(d / f"features_w{week:02d}.parquet"),
                     pd.read_parquet(d / f"themes_w{week:02d}.parquet"),
-                    pd.read_parquet(d / f"variants_w{week:02d}.parquet"))
+                    pd.read_parquet(d / f"variants_w{week:02d}.parquet"),
+                    pd.read_parquet(d / f"channels_w{week:02d}.parquet"))

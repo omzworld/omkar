@@ -157,8 +157,9 @@ class Condition:
             return res & left.notna()
         if isinstance(left, pd.Series) and isinstance(right, pd.Series) and \
                 (left.dtype == object or right.dtype == object or str(left.dtype) == "string"):
-            res = pd.Series(OPS[type(op)](left.astype(object).to_numpy(), right.astype(object).to_numpy()),
-                            index=df.index)
+            def plain(s):   # text columns may hold pandas' NA, which cannot be compared; use None instead
+                return s.astype(object).where(s.notna(), None).to_numpy()
+            res = pd.Series(OPS[type(op)](plain(left), plain(right)), index=df.index)
         else:
             res = OPS[type(op)](left, right)
         if not isinstance(res, pd.Series):

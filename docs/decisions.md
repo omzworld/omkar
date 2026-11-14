@@ -12,13 +12,8 @@ Decisions made during the build that change or add to the spec pack. Newest at t
 | Deferred to the roadmap | Key account manager briefs, agency files, propensity-to-move and look-alike detectors, proposed rules from discovery, Xifaxan and rare disease rule families |
 
 Open items to settle before the steps that need them:
-- Constraints live in two places (33 constraint rules in the catalogue and the CSV tables). Plan: the CSVs hold the
-  numbers, the rules hold the logic. Step 3.
-- The "rules-to-score dial" in demo scene 3 is not defined in the spec. Step 3.
 - Market signals with no source table (formulary, tenders, NHS waiting list, readmissions): rules using them are left
   out of the pitch set unless a simple synthetic signal is added. Step 2.
-- `optimiser_example.md` uses a 0.25 response chance for the rep email substitute without saying where it comes from. Step 3.
-- R016 references `cap_touches_month`, which comes from `cadence.csv`, not the feature table. Step 2/3.
 
 ## Step 1: synthetic data
 
@@ -68,3 +63,36 @@ Open items to settle before the steps that need them:
   written by hand, plus hand-written fixtures with realistic values for the demo rules.
 - Authoring example 1 ("GP, brick down 8%, no rep visit in two months") matches 107 physicians in 23 territories in
   week 1; `spec/authoring/examples.md` expects 140 to 180 at week 8. Recheck at step 6 once weeks 1 to 8 have run.
+
+## Step 3: constraints and optimiser
+
+- Triggers become candidate actions (`nba/candidates.py`). `next_best` becomes one candidate each for rep visit, rep
+  email and marketing email, and the optimiser keeps the best. `next_theme` follows the enabled content sequence rules
+  (R063 to R066), with a stage default (curiosity and consideration: efficacy; experience: dosing; loyalty: real-world
+  evidence; advocacy: peer experience); a theme ignored twice moves to the next theme (R070). The asset is the first
+  approved, in-date PromoMats asset for the market, brand, theme and channel; if none, the best available one, so the
+  constraints engine can say why it cannot be used. "Find out why" visits (R041) need no asset.
+- Constraints come from both sources, one verdict. The catalogue's constraint rules hold the logic and brand-editable
+  numbers; `consent_rules.csv` adds per-channel consent (it catches, for example, rep email in Germany without double
+  opt-in, which R010 only checks for marketing email) and `country_code.csv` adds channel bans and monthly caps per
+  channel. Blocks first (highest priority wins), then delays. A delay releases next week, or on the 1st of next month
+  for rules timed `next_month` (R016).
+- The optimiser example's 0.25 chance for the rep email substitute is the physician's own chance on rep email,
+  computed the same way as any chance (own history, segment, benchmark).
+- Value of response: the yearly stage-move value in `return_assumptions.yaml` for the physician's next move,
+  times the new `value_horizon_years` (2), times potential (specialty weight x brick potential x practice size against
+  similar practices, capped between 0.25 and 4). Risk triggers use the value of the move into the current stage
+  (what could be lost). Transitions missing for a brand use half its smallest value; advocates have a maintenance value
+  of half the loyalty-to-advocacy value. Plenvu/Moviprep uses the procedure basis: EUR 9 per point of share x the unit's
+  yearly colonoscopies / 100, half for an individual physician; competitor share loss adds EUR 40 per point on risk
+  triggers. Added `unit_colonoscopies_qtr` to `feature_columns.md` for this.
+- Capacity per week: rep visits and rep emails from `rep_capacity`; remote calls 10 per rep and KAM briefs 8 per KAM
+  from `capacity.csv`; marketing email 5,000 per market per send window, two windows a week; webinar 300 seats.
+- Selection order reproduces `optimiser_example.md`: drop negative returns, keep the best per physician, fill capacity
+  by return, substitute (visit to rep email, KAM visit to KAM brief) when full, drop anything not positive.
+- The rules-to-score dial (demo scene 3): rank score = (1 - dial) x rule priority / 100 + dial x expected return /
+  largest expected return. At 0 the rules decide and negative returns are kept, as a rules-only engine would; at 1
+  expected return decides. Week 1: dial 0 sends 873 actions for EUR 142k expected return and EUR 93k cost; dial 1
+  sends 753 for EUR 252k and EUR 78k.
+- To watch: R041 ("no response to the last three touches, rep finds out why") is about a third of what is sent in
+  week 1. Tighten it (for example 4 touches, or exclude event invitations) if it crowds out other actions in the demo.
