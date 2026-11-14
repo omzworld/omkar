@@ -7,7 +7,8 @@ rule condition must be here; the catalogue test fails if a rule references a mis
 hcp_id, market, account_type, hcp_type, hcp_role, specialty, practice_type, practice_size, rural_flag, age_band,
 hcp_language, market_language, brick_id, territory_id, pilot_arm, tier (A, B, C from brick potential and specialty weight),
 channel_lean (digital, rep, default), stage, prev_stage, stage_regressed, days_in_stage, segment (cadence.csv key),
-tier derived from brick_potential_index and practice_size; new_in_target, days_since_added, on_named_list, expert_status
+tier derived from brick_potential_index and practice_size; new_in_target, days_since_added, on_named_list, expert_status,
+brand (the account's main brand; rules with a brand apply only to matching accounts)
 
 ## Consent and eligibility
 consent_email, consent_double_opt_in, consent_remote, consent_digital_tracking, opt_out_any, no_promo_flag, hcp_status,
@@ -39,6 +40,10 @@ unit_id, unit_tier, unit_procedure_volume_qoq_pct, unit_competitor_share_change,
 unit_quality_audit_due_days, screening_programme_expansion, new_endoscopist_joined, liver_unit_flag,
 discharge_pathway_project, treatment_centre_flag, patient_identified_signal, patient_organisation_event_days,
 hub_enrolment_pending, msl_contact_completed, advocacy_candidate, care_home_prescriber, paediatric_prescriber
+
+## Cadence limits (looked up from cadence.csv by segment; added during the build)
+cap_touches_month, min_gap_days_any, min_gap_days_rep_visit, min_gap_days_email, gap_after_two_ignored_days,
+no_same_theme_days
 
 ## Field and feedback
 rep_capacity_slots_week, kam_capacity_week, territory_vacant, dismissals_30d, last_dismiss_reason, days_since_dismiss,

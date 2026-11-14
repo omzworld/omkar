@@ -1910,7 +1910,7 @@ rules:
   markets: *id001
   trigger_type: opportunity
   enabled_at_launch: false
-  condition: hcp_role == 'hospital_pharmacist' and formulary_review_days <= 90
+  condition: hcp_role == 'pharmacist_hospital' and formulary_review_days <= 90
   action:
     channel: kam_brief
     content_theme: economic_evidence

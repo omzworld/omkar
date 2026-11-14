@@ -10,6 +10,10 @@ import pandas as pd
 
 from nba import spec
 
+# Each specialty's main brand (business reference data used by the generator and the feature builder).
+BRAND = {"gp": "Movicol", "paediatrics": "Movicol", "internal_medicine": "Movicol",
+         "gastroenterology": "Plenvu_Moviprep", "endoscopy_nurse": "Plenvu_Moviprep",
+         "pharmacist_hospital": "Plenvu_Moviprep", "hepatology": "Xifaxan"}
 OTHER_SPECIALTY_WEIGHT = 0.6  # specialties without a weight in return_assumptions.yaml
 
 

@@ -1,12 +1,15 @@
-"""Command line: `nba synth`, `nba readiness`. More commands arrive with each build step."""
+"""Command line: `nba synth`, `nba readiness`, `nba features`, `nba lint`, `nba triggers`."""
 from __future__ import annotations
 
+import pandas as pd
 import typer
 
 from nba import readiness as readiness_mod
 from nba import spec
 
 app = typer.Typer(help="Next best action engine (MVP on synthetic data).", no_args_is_help=True)
+pd.set_option("display.width", 200)
+pd.set_option("display.max_colwidth", 80)
 
 
 @app.command()
@@ -25,6 +28,71 @@ def readiness():
     typer.echo(readiness_mod.render(report))
     typer.echo(f"\nSaved to {readiness_mod.save(report)}")
     raise typer.Exit(0 if readiness_mod.passed(report) else 1)
+
+
+@app.command()
+def features(week: int = typer.Option(1, help="Pilot week (1 = pilot start)."),
+             show: str = typer.Option(None, help="An account id to print in full, e.g. UK-H00012.")):
+    """Build the feature table for a week, save the snapshot and print a summary."""
+    from nba import features as feat
+    f = feat.build(week)
+    t = f.table
+    typer.echo(f"Week {week} (data up to {f.as_of:%d %b %Y}): {len(t):,} accounts x {t.shape[1]} columns. "
+               f"Saved under {spec.data_dir() / 'snapshots'}.")
+    hcp = t[t.account_type == "hcp"]
+    typer.echo("\nPhysicians by tier and journey stage:")
+    typer.echo(pd.crosstab(hcp.tier, hcp.stage).reindex(
+        columns=["curiosity", "consideration", "experience", "loyalty", "advocacy"]).to_string())
+    typer.echo("\nPhysicians by channel lean:  " + ", ".join(f"{k} {v}" for k, v in hcp.channel_lean.value_counts().items()))
+    row = t[t.hcp_id == show] if show else hcp.sample(1, random_state=week)
+    if len(row):
+        typer.echo(f"\nAll columns for {row.hcp_id.iloc[0]}:")
+        typer.echo(row.T.to_string(header=False))
+
+
+@app.command()
+def lint():
+    """Check every rule in the catalogue: columns exist, values are valid, parameters are filled."""
+    from nba.rules import catalogue
+    problems = catalogue.lint()
+    rules = catalogue.load()
+    for p in problems:
+        typer.echo(p)
+    typer.echo(f"{len(rules)} rules checked, {len(problems)} problems.")
+    raise typer.Exit(1 if problems else 0)
+
+
+@app.command()
+def triggers(week: int = typer.Option(1, help="Pilot week."),
+             set_: list[str] = typer.Option(None, "--set", help="Override a rule parameter, e.g. R075.decline_pct=6"),
+             rule: str = typer.Option(None, help="Show the triggers of one rule, e.g. R075.")):
+    """Raise this week's triggers from the enabled rules (uses the saved feature snapshot)."""
+    from nba import features as feat
+    from nba.rules import engine
+    try:
+        f = feat.load_snapshot(week)
+    except FileNotFoundError:
+        f = feat.build(week)
+    overrides: dict = {}
+    for item in set_ or []:
+        key, value = item.split("=", 1)
+        rule_id, param = key.split(".", 1)
+        overrides.setdefault(rule_id, {})[param] = float(value) if "." in value else int(value)
+    base = engine.raise_triggers(f)
+    tr = engine.raise_triggers(f, overrides) if overrides else base
+    typer.echo(f"Week {week}: {len(tr):,} triggers from {tr.rule_id.nunique()} rules "
+               f"({tr.hcp_id.nunique():,} accounts).\n")
+    typer.echo(engine.summary(tr).to_string(index=False))
+    for rule_id in overrides:
+        d = engine.compare(base, tr, rule_id)
+        typer.echo(f"\n{rule_id} with {overrides[rule_id]}: {d['after']} accounts (was {d['before']}), "
+                   f"{len(d['added'])} added, {len(d['removed'])} removed.")
+        added = tr[(tr.rule_id == rule_id) & tr.hcp_id.isin(d["added"])]
+        if len(added):
+            typer.echo(added[["hcp_id", "territory_id", "reason"]].head(15).to_string(index=False))
+    if rule:
+        typer.echo(f"\nTriggers for {rule}:")
+        typer.echo(tr[tr.rule_id == rule][["hcp_id", "market", "territory_id", "reason"]].to_string(index=False))
 
 
 if __name__ == "__main__":

@@ -3,20 +3,12 @@ the run is reproducible from the seed, and hidden behaviour clusters never reach
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from nba import data, readiness, schema, spec
 from nba.synth import generate
 
 ROOT = Path(__file__).resolve().parent.parent
 QUIET = dict(log=lambda *_: None)
-
-
-@pytest.fixture(scope="session")
-def full(tmp_path_factory) -> Path:
-    d = tmp_path_factory.mktemp("full")
-    generate(data_dir=d, **QUIET)
-    return d
 
 
 def test_every_table_in_the_spec_is_written_with_its_columns(full):

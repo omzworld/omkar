@@ -9,8 +9,8 @@ are in `docs/decisions.md`.
 | Step | What | Status |
 |---|---|---|
 | 1 | Project setup, schemas, synthetic data generator, data readiness report | Done |
-| 2 | Feature table and rules engine | Next |
-| 3 | Constraints and optimiser | |
+| 2 | Feature table and rules engine | Done |
+| 3 | Constraints and optimiser | Next |
 | 4 | Delivery, talk tracks, feedback simulator, 26-week runner | |
 | 5 | Measurement, return model, API, web screens | |
 | 6 | Plain-language rule writing and quick impact test | |
@@ -36,8 +36,25 @@ make readiness
 make test
 ```
 
+Then, for a pilot week:
+
+```bash
+.venv/bin/nba features --week 1
+```
+
+```bash
+.venv/bin/nba triggers --week 1 --set R075.decline_pct=6
+```
+
+```bash
+.venv/bin/nba lint
+```
+
 `make synth` writes about 550,000 rows across 25 tables to `data/` in a few seconds. `make readiness` prints the
-data readiness report (demo scene 1) and saves it to `data/readiness.json`.
+data readiness report (demo scene 1) and saves it to `data/readiness.json`. `nba features` builds the
+week's feature table (one row per account, 133 columns) and saves a snapshot. `nba triggers` runs the enabled
+rules and shows what fired and why; `--set` previews a threshold change (demo scene 2). `nba lint` checks every
+rule in the catalogue.
 
 ## Look at the data with SQL
 
@@ -57,6 +74,9 @@ nba/            the engine (Python package)
   segments.py   tier A/B/C assignment
   synth/        synthetic data generator (entities, content, 24-month history, sales, behaviour model)
   readiness.py  data readiness report (DuckDB SQL)
+  columns.py    the column dictionary, read from spec/schemas/feature_columns.md
+  features/     the weekly feature table (touch history, market signals, consent) in DuckDB SQL
+  rules/        expr.py (safe condition evaluator), catalogue.py (load, parameters, linter), engine.py (triggers)
   cli.py        the `nba` command
 spec/           business specification (authority for rules, constraints, schemas, assumptions)
 tests/          automated tests (pytest)

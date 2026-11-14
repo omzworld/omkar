@@ -9,14 +9,11 @@ import numpy as np
 import pandas as pd
 
 from nba import spec
-from nba.segments import assign_tier, specialty_weight
+from nba.segments import BRAND, assign_tier, specialty_weight
 
 HCP_TYPE = {"gp": "physician", "gastroenterology": "physician", "hepatology": "physician",
             "paediatrics": "physician", "internal_medicine": "physician",
             "endoscopy_nurse": "nurse", "pharmacist_hospital": "pharmacist"}
-BRAND = {"gp": "Movicol", "paediatrics": "Movicol", "internal_medicine": "Movicol",
-         "gastroenterology": "Plenvu_Moviprep", "endoscopy_nurse": "Plenvu_Moviprep",
-         "pharmacist_hospital": "Plenvu_Moviprep", "hepatology": "Xifaxan"}
 # Where each specialty works: (parent type, probability), remaining probability goes to the second option.
 PARENT = {"gp": ("practice", 1.0, None), "paediatrics": ("practice", 0.6, "hospital"),
           "internal_medicine": ("practice", 0.6, "hospital"), "gastroenterology": ("endoscopy_unit", 0.6, "hospital"),
