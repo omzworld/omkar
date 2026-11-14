@@ -159,3 +159,21 @@ Open items to settle before the steps that need them:
   EUR 819; but fewer test physicians moved up a stage (10.2% against 14.3%). Pilot gates met: rep acceptance and reach.
   Not met: 4-point lift, 2% monthly consent growth (test 1.2%), EUR 45 cost per engaged physician (unreachable while a
   rep visit costs EUR 150). These are calibration questions for the brand and finance assumptions.
+
+## Step 6 (partial): writing a rule in the rule studio, and the data control center
+
+- No language model key yet, so `author.parse` (typed sentence to rule) is not built. The rule studio's "Create new
+  rule" is a guided form instead: brand, markets, conditions picked from the feature table's columns (columns with no
+  source are listed but cannot be picked), action, theme, timing, priority and the reason. Every number becomes a
+  named parameter, so the new rule can be tuned and versioned like a catalogue rule. `nba/author.py`.
+- `author.validate` runs the catalogue linter on the draft and lists missing fields (the market is highlighted, as in
+  `spec/authoring/examples.md`). `author.quick_test` runs the draft on the latest completed week's feature snapshot:
+  matches, reps and territories, the constraints verdicts by constraint, overlap with other rules, and how many the
+  optimiser would send in test territories next to every other rule. Nothing is saved.
+- Approved rules get the next free id (R136 onwards) and are saved to `data/custom_rules.json`; `catalogue.load()`
+  adds them, so they run from the next pilot week. They can be removed again. `make demo` clears them.
+- Authoring example 1 on week 26: 55 GPs matched (UK 40, DE 15), 14 reps, 49 allowed, 3 delayed, 3 blocked; 4 sent.
+  Below the 140 to 180 the examples file expects at week 8; recheck against week 8 when step 6 is finished.
+- Data control center (`nba/datacatalog.py`, `/api/data/catalog`): every dataset in `datasets.yaml` checked live
+  against its Parquet file (rows, fields present, fill rate, date range), 23 joins tested key by key, and the feature
+  table's coverage including the signals that have no source yet. The screen says plainly that the values are synthetic.

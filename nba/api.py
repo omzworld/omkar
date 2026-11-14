@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from nba import features, measure, pipeline, proposals, readiness, runner, spec
+from nba import author, datacatalog, features, measure, pipeline, proposals, readiness, runner, spec
 from nba.rules import catalogue, engine, versions
 
 app = FastAPI(title="Next best action engine", version="0.1")
@@ -68,7 +68,7 @@ def _rule_json(r, overrides, paused):
             "enabled": r.enabled, "paused": r.id in paused, "channel": r.channel, "content_theme": r.content_theme,
             "priority": r.priority, "condition": r.condition_template, "reason_template": r.reason_template,
             "parameters": params, "catalogue_parameters": r.parameters, "owner": r.owner,
-            "version": len(versions.history().get(r.id, [])) + 1}
+            "version": len(versions.history().get(r.id, [])) + 1, "custom": r.owner == "Rule studio"}
 
 
 @app.get("/api/rules")
@@ -134,6 +134,55 @@ def save_rule(rule_id: str, body: Params):
 def reset_rules():
     versions.reset()
     return {"ok": True}
+
+
+# ------------------------------------------------------------------------------------------- scene 7: write a rule
+
+class Draft(BaseModel):
+    form: dict = {}
+    week: int | None = None
+
+
+@app.get("/api/author/options")
+def author_options():
+    return out(author.options())
+
+
+@app.post("/api/author/check")
+def author_check(body: Draft):
+    return out(author.validate(body.form))
+
+
+@app.post("/api/author/test")
+def author_test(body: Draft):
+    try:
+        return out(author.quick_test(body.form, body.week))
+    except Exception as e:  # noqa: BLE001  (shown to the marketer as a plain message)
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/author/approve")
+def author_approve(body: Draft):
+    try:
+        return out(author.approve(body.form))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/author/remove/{rule_id}")
+def author_remove(rule_id: str):
+    try:
+        author.remove(rule_id)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    return {"ok": True}
+
+
+# ------------------------------------------------------------------------------------------- data control center
+
+@app.get("/api/data/catalog")
+def data_catalog():
+    return out(datacatalog.build())
 
 
 # ------------------------------------------------------------------------------------------- scene 3: weekly run

@@ -37,7 +37,7 @@ export default function Home({ pilot, go, screens }) {
   const hcps = r ? r.headline.reduce((a, h) => a + h.healthcare_professionals, 0) : null;
   const terr = r ? r.headline.reduce((a, h) => a + h.test_territories + h.control_territories, 0) : null;
   const total = pilot?.pilot_weeks ?? 26;
-  const tour = screens.filter((s) => s.id !== "home");
+  const tour = screens.filter((s) => s.n);
 
   return (
     <div className="mx-auto max-w-6xl space-y-16 pb-10">

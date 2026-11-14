@@ -23,8 +23,8 @@ web:              ## build the web app (served by the engine at http://127.0.0.1
 serve:            ## start the engine's API and the web app
 	$(NBA) serve
 
-demo: synth web   ## fresh data and rule versions, then the app; run the pilot from the Feedback and Results screens
-	rm -f data/rule_versions.json
+demo: synth web   ## fresh data, rule versions and studio-written rules, then the app; run the pilot from the Feedback and Results screens
+	rm -f data/rule_versions.json data/custom_rules.json
 	$(NBA) serve
 
 test:             ## run the automated tests

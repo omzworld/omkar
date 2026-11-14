@@ -2,10 +2,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, num, words } from "../api";
 import { Badge, Button, Card, Field, inputClass, Message, Table } from "../ui";
+import NewRule from "./NewRule.jsx";
 
 export default function RuleStudio() {
   const [rules, setRules] = useState([]);
   const [selected, setSelected] = useState("R075");
+  const [creating, setCreating] = useState(false);
+  const [banner, setBanner] = useState(null);
   const [family, setFamily] = useState("all");
   const [detail, setDetail] = useState(null);
   const [params, setParams] = useState({});
@@ -32,6 +35,21 @@ export default function RuleStudio() {
     catch (e) { setMsg({ tone: "bad", text: e.message }); }
     setBusy(false);
   };
+  const onApproved = async (rec) => {
+    setCreating(false);
+    await load();
+    setFamily("all");
+    setSelected(rec.id);
+    setBanner(`${rec.id} is approved and switched on. It joins the next week the pilot runs.`);
+  };
+  const removeRule = async () => {
+    if (!confirm(`Remove ${selected}? It will not run in later weeks.`)) return;
+    try {
+      await api(`/author/remove/${selected}`, {});
+      setBanner(`${selected} was removed.`);
+      await load(); setSelected("R075");
+    } catch (e) { setMsg({ tone: "bad", text: e.message }); }
+  };
   const doSave = async () => {
     setBusy(true);
     try {
@@ -49,22 +67,26 @@ export default function RuleStudio() {
         <h1 className="text-2xl font-semibold">Rule studio</h1>
         <p className="mt-1 max-w-3xl text-[var(--ink-2)]">
           The rules that raise a trigger for a physician or account. Change a threshold, see exactly who it adds or
-          removes this week, then save it as a new version. The catalogue itself is never overwritten.
+          removes this week, then save it as a new version. Or write a new rule, test it on a real week, and approve it.
+          The catalogue itself is never overwritten.
         </p>
       </header>
+      {banner && <Message tone="good"><span className="mr-2 text-[var(--good-ink)]">✓</span>{banner}</Message>}
       <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
-        <Card title={`Rules switched on (${rules.filter((r) => r.enabled).length})`}>
+        <Card title={`Rules switched on (${rules.filter((r) => r.enabled).length})`}
+          actions={<Button onClick={() => { setCreating(true); setBanner(null); }}>+ Create new rule</Button>}>
           <select className={`${inputClass} mb-3`} value={family} onChange={(e) => setFamily(e.target.value)} aria-label="Rule family">
             {families.map((f) => <option key={f} value={f}>{f === "all" ? "All families" : words(f)}</option>)}
           </select>
           <ul className="max-h-[36rem] space-y-1 overflow-auto">
             {shown.filter((r) => r.enabled).map((r) => (
               <li key={r.id}>
-                <button onClick={() => setSelected(r.id)}
-                  className={`w-full rounded-lg px-3 py-2 text-left text-sm ${selected === r.id ? "bg-[var(--chip)]" : "hover:bg-[var(--chip)]/60"}`}>
+                <button onClick={() => { setSelected(r.id); setCreating(false); }}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm ${selected === r.id && !creating ? "bg-[var(--chip)]" : "hover:bg-[var(--chip)]/60"}`}>
                   <div className="flex items-center gap-2">
                     <span className="tabular font-medium">{r.id}</span>
                     <span className="text-xs text-[var(--muted)]">{words(r.brand)}</span>
+                    {r.custom && <Badge tone="good">new</Badge>}
                     {r.version > 1 && <Badge tone="accent">v{r.version}</Badge>}
                     {r.paused && <Badge tone="bad">paused</Badge>}
                   </div>
@@ -75,10 +97,12 @@ export default function RuleStudio() {
           </ul>
         </Card>
 
-        {detail && (
+        {creating && <NewRule onClose={() => setCreating(false)} onApproved={onApproved} />}
+
+        {detail && !creating && (
           <div className="min-w-0 space-y-6">
             <Card title={`${detail.id} · ${words(detail.family)}`} subtitle={`${words(detail.brand)} · ${detail.markets.join(", ")} · ${detail.trigger_type} · action: ${words(detail.channel)}, ${words(detail.content_theme)}`}
-              actions={<Badge tone="accent">version {detail.version}</Badge>}>
+              actions={<div className="flex items-center gap-2">{detail.custom && <><Badge tone="good">written in the rule studio</Badge><Button kind="secondary" onClick={removeRule}>Remove</Button></>}<Badge tone="accent">version {detail.version}</Badge></div>}>
               <p className="text-sm text-[var(--ink-2)]">Reason the rep sees</p>
               <p className="mb-4 mt-1">{detail.reason_template}</p>
               <p className="text-sm text-[var(--ink-2)]">Condition</p>

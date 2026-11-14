@@ -73,8 +73,15 @@ class Rule:
         return Condition(self.condition_text)
 
 
+def _custom_records() -> list[dict]:
+    """Rules written and approved in the rule studio (nba.author), kept apart from the catalogue file."""
+    import json
+    p = spec.data_dir() / "custom_rules.json"
+    return json.loads(p.read_text()) if p.exists() else []
+
+
 def load(enabled_only: bool = False) -> list[Rule]:
-    rules = [Rule.from_record(r) for r in spec.catalogue()["rules"]]
+    rules = [Rule.from_record(r) for r in spec.catalogue()["rules"] + _custom_records()]
     return [r for r in rules if r.enabled] if enabled_only else rules
 
 
