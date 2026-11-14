@@ -26,7 +26,7 @@ rule(C,"constraints","all",ALL,"none","touches_month >= cap_touches_month","dela
 rule(C,"constraints","all",ALL,"none","channel == 'rep_visit' and days_since_rep_visit < {min_gap_visit}","delay","none","Delayed: last visit {days_since_rep_visit} days ago, minimum gap {min_gap_visit}",dict(min_gap_visit=21),launch=True,owner="brand",prio=90)
 rule(C,"constraints","all",ALL,"none","channel in ['marketing_email','rep_email'] and days_since_last_email < {min_gap_email}","delay","none","Delayed: last email {days_since_last_email} days ago, minimum gap {min_gap_email}",dict(min_gap_email=7),launch=True,owner="brand",prio=90)
 rule(C,"constraints","all",ALL,"none","days_since_last_touch < {min_gap_any}","delay","none","Delayed: last touch {days_since_last_touch} days ago, minimum gap {min_gap_any}",dict(min_gap_any=4),launch=True,owner="brand",prio=90)
-rule(C,"constraints","all",ALL,"none","emails_ignored_consecutive >= 2 and channel in ['marketing_email','rep_email']","delay","none","Delayed: two emails ignored, email gap doubled to {gap_after_two_ignored} days",dict(gap_after_two_ignored=21),launch=True,owner="brand",prio=88)
+rule(C,"constraints","all",ALL,"none","emails_ignored_consecutive >= 2 and channel in ['marketing_email','rep_email'] and days_since_last_email < {gap_after_two_ignored}","delay","none","Delayed: two emails ignored, email gap doubled to {gap_after_two_ignored} days",dict(gap_after_two_ignored=21),launch=True,owner="brand",prio=88)
 rule(C,"constraints","all",ALL,"none","same_theme_touches_7d >= 1","delay","none","Delayed: same theme already sent on another channel in the last 7 days",launch=True,owner="brand",prio=85)
 rule(C,"constraints","all",ALL,"none","channel == 'rep_visit' and rep_visits_90d >= {max_visits_90d}","delay","none","Delayed: {rep_visits_90d} visits in 90 days, maximum {max_visits_90d}",dict(max_visits_90d=4),launch=True,owner="brand",prio=85)
 rule(C,"constraints","all",ALL,"none","channel == 'webinar' and webinar_invites_30d >= {max_invites_30d}","delay","none","Delayed: {webinar_invites_30d} webinar invites in 30 days",dict(max_invites_30d=1),launch=True,owner="brand",prio=80)
@@ -149,6 +149,9 @@ rule(F,"feedback","all",ALL,"none","last_dismiss_reason == 'seen_recently'","adj
 rule(F,"feedback","all",ALL,"none","last_dismiss_reason == 'routing'","adjust","none","Batch with other suggestions in the same area next week",launch=False,prio=0)
 rule(F,"feedback","all",ALL,"none","last_dismiss_reason == 'wrong_content'","adjust","none","Mark theme {content_theme} as not relevant for this physician; move to the next theme",launch=False,prio=0)
 rule(F,"feedback","all",ALL,"none","rule_accept_rate_30d < {min_accept_rate} and rule_triggers_30d >= 20","propose","none","Rule {rule_id} accepted {rule_accept_rate_30d}% of the time: propose a threshold change at the monthly review",dict(min_accept_rate=0.4),launch=True,prio=0)
+# Added during the build (see docs/decisions.md): the always-on journey rule, so every eligible physician is
+# considered each week and the optimiser chooses the channel; trigger rules above add urgency and context.
+rule("engagement_triggers","rules","all",ALL,"opportunity","days_since_last_touch >= {nurture_gap_days} and stage != 'advocacy'","next_best","next_theme","No touch in {days_since_last_touch} days: next step in the {stage} journey",dict(nurture_gap_days=14),launch=True,prio=40)
 fams={}
 for r in R: fams[r['family']]=fams.get(r['family'],0)+1
 launch=sum(1 for r in R if r['enabled_at_launch'])

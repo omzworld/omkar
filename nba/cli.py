@@ -1,4 +1,4 @@
-"""Command line: `nba synth`, `nba readiness`, `nba features`, `nba lint`, `nba triggers`, `nba week`."""
+"""Command line: synth, readiness, features, lint, triggers, week, run."""
 from __future__ import annotations
 
 import pandas as pd
@@ -124,6 +124,19 @@ def week(week: int = typer.Option(1, help="Pilot week."),
     typer.echo("\n5. By rule")
     typer.echo(s["by_rule"].to_string(index=False))
     typer.echo(f"\nSaved to {spec.data_dir() / 'runs' / f'week_{week:02d}'}")
+
+
+@app.command()
+def run(weeks: int = typer.Option(26, help="How many pilot weeks to run."),
+        dial: float = typer.Option(1.0, help="Rules-to-score dial (0 = rules decide, 1 = expected return decides)."),
+        set_: list[str] = typer.Option(None, "--set", help="Override a rule parameter, e.g. R075.decline_pct=6")):
+    """Run the pilot from week 1: engine in test territories, today's plan in control, simulated field feedback."""
+    from nba import runner
+    out = runner.run(weeks, dial=dial, overrides=_overrides(set_))
+    typer.echo(f"\nDone: {weeks} weeks. Outputs under {spec.data_dir() / 'runs'} "
+               f"(Veeva payloads, agency files, talk tracks per week).")
+    typer.echo(f"Suggestions accepted by reps: {out.accepted.sum():,} of {out.suggestions.sum():,} "
+               f"({out.accepted.sum() / max(out.suggestions.sum(), 1):.0%}).")
 
 
 if __name__ == "__main__":

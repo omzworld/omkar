@@ -8,26 +8,29 @@ import numpy as np
 import pandas as pd
 
 # Theme -> journey stage it is designed for ("any" = fits every stage).
+# Theme -> journey stage it is designed for ("any" = fits every stage). Aligned with the catalogue's content
+# sequence rules (R063-R069): curiosity -> efficacy, consideration -> patient case, experience -> dosing,
+# loyalty -> real-world evidence, advocacy -> peer experience.
 THEMES = {
-    "Movicol": {"introduction": "curiosity", "first_contact": "curiosity", "efficacy": "consideration",
+    "Movicol": {"introduction": "curiosity", "first_contact": "curiosity", "efficacy": "curiosity",
                 "clinical_evidence": "consideration", "guideline_update": "consideration",
-                "economic_evidence": "consideration", "patient_case": "experience", "dosing": "experience",
+                "economic_evidence": "consideration", "patient_case": "consideration", "dosing": "experience",
                 "paediatric": "experience", "chronic_constipation_elderly": "experience",
                 "access": "loyalty", "pharmacy_support": "loyalty", "real_world_evidence": "loyalty",
                 "peer_experience": "advocacy", "safety": "any", "event_invite": "any", "event_follow_up": "any"},
-    "Plenvu_Moviprep": {"introduction": "curiosity", "first_contact": "curiosity", "efficacy": "consideration",
+    "Plenvu_Moviprep": {"introduction": "curiosity", "first_contact": "curiosity", "efficacy": "curiosity",
                         "clinical_evidence": "consideration", "low_volume_prep": "consideration",
-                        "economic_evidence": "consideration", "cleansing_quality": "experience",
-                        "dosing": "experience", "dosing_nursing": "experience", "patient_instructions": "experience",
-                        "capacity_planning": "loyalty", "referral_pathway": "loyalty", "access": "loyalty",
-                        "real_world_evidence": "loyalty", "peer_experience": "advocacy", "safety": "any",
-                        "event_invite": "any", "event_follow_up": "any"},
-    "Xifaxan": {"introduction": "curiosity", "first_contact": "curiosity", "efficacy": "consideration",
+                        "economic_evidence": "consideration", "patient_case": "consideration",
+                        "cleansing_quality": "experience", "dosing": "experience", "dosing_nursing": "experience",
+                        "patient_instructions": "experience", "capacity_planning": "loyalty",
+                        "referral_pathway": "loyalty", "access": "loyalty", "real_world_evidence": "loyalty",
+                        "peer_experience": "advocacy", "safety": "any", "event_invite": "any", "event_follow_up": "any"},
+    "Xifaxan": {"introduction": "curiosity", "first_contact": "curiosity", "efficacy": "curiosity",
                 "clinical_evidence": "consideration", "hepatic_encephalopathy_evidence": "consideration",
-                "economic_evidence": "consideration", "recurrence_prevention": "experience", "dosing": "experience",
-                "patient_case": "experience", "discharge_pathway": "loyalty", "access": "loyalty",
-                "real_world_evidence": "loyalty", "peer_experience": "advocacy", "safety": "any",
-                "event_invite": "any", "event_follow_up": "any"},
+                "economic_evidence": "consideration", "patient_case": "consideration",
+                "recurrence_prevention": "experience", "dosing": "experience", "discharge_pathway": "loyalty",
+                "access": "loyalty", "real_world_evidence": "loyalty", "peer_experience": "advocacy",
+                "safety": "any", "event_invite": "any", "event_follow_up": "any"},
 }
 BRAND_CODE = {"Movicol": "MOV", "Plenvu_Moviprep": "PLV", "Xifaxan": "XIF"}
 CORE_CHANNELS = ["rep_visit", "rep_email", "marketing_email"]

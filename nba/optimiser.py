@@ -9,9 +9,10 @@ channel preference benchmark. Value is the yearly value of moving the physician 
 
 Selection, in the order of spec/examples/optimiser_example.md:
 1. drop candidates with a negative expected return;
-2. keep the best candidate per physician;
-3. fill each rep's, key account manager's and the agency's capacity in order of return;
-4. when capacity is full, substitute a cheaper channel if it has a positive return and capacity;
+2 and 3. walk candidates from the highest return down and give each physician the first action whose rep, key
+   account manager or agency still has a slot (so a physician whose best channel is full gets their next best);
+4. a physician left without any action gets a cheaper substitute for their top choice (visit -> rep email), if it
+   has a positive return and capacity;
 5. drop anything whose return is not positive.
 Every candidate leaves with a status (sent, substituted, not_sent) and a reason.
 
@@ -176,27 +177,40 @@ def select(c: pd.DataFrame, slots: dict, dial: float = 1.0) -> pd.DataFrame:
         c.loc[neg, "not_sent_reason"] = [f"Not sent: expected return {v:.0f} is not positive" for v in er[neg]]
         pool &= ~neg
 
+    # 2 + 3. Best action per physician that still has capacity: walk all candidates from the highest rank down;
+    # a physician gets the first one whose rep, KAM or agency still has a slot.
     order = c[pool].sort_values(["rank_score", "candidate_id"], ascending=[False, True])
-    best = order.drop_duplicates("hcp_id").index                           # 2. best per physician
-    lost = pool & ~c.index.isin(best)
-    c.loc[lost, "status"] = "not_sent"
-    c.loc[lost, "not_sent_reason"] = "Not sent: another action for this physician has a higher return"
-
-    left = dict(slots)                                                      # 3. fill capacity by return
+    left = dict(slots)
     c["resource"] = None
-    c.loc[best, "resource"] = _resource(c.loc[best, "channel"], c.loc[best])
-    overflow = []
-    for i in order.loc[order.index.isin(best)].index:
+    if len(order):
+        c.loc[order.index, "resource"] = _resource(order.channel, order)
+    assigned, first_failed, failed = set(), {}, []
+    for i in order.index:
+        h = c.at[i, "hcp_id"]
+        if h in assigned:
+            c.at[i, "status"] = "not_sent"
+            c.at[i, "not_sent_reason"] = "Not sent: another action for this physician has a higher return"
+            continue
         key = c.at[i, "resource"]
         if left.get(key, 0) > 0:
             left[key] -= 1
             c.at[i, "status"], c.at[i, "final_return"] = "sent", er[i]
+            assigned.add(h)
         else:
-            overflow.append(i)
+            failed.append(i)
+            first_failed.setdefault(h, i)
 
-    subs = sorted(overflow, key=lambda i: -(c.at[i, "substitute_return"] if pd.notna(c.at[i, "substitute_return"])
-                                             else -np.inf))
-    for i in subs:                                                          # 4. substitute a cheaper channel
+    def no_slot(i):
+        res, owner = c.at[i, "resource"]
+        c.at[i, "status"] = "not_sent"
+        c.at[i, "not_sent_reason"] = (f"Not sent: no {res.replace('_', ' ')} slots left for {owner}"
+                                      if not pd.isna(owner) else
+                                      f"Not sent: no one to deliver a {res.replace('_', ' ')} (vacant territory)")
+
+    # 4. Physicians still without an action: substitute a cheaper channel for their top choice.
+    tops = [i for h, i in first_failed.items() if h not in assigned]
+    tops.sort(key=lambda i: -(c.at[i, "substitute_return"] if pd.notna(c.at[i, "substitute_return"]) else -np.inf))
+    for i in tops:
         sub_ch, sub_er = c.at[i, "substitute_channel"], c.at[i, "substitute_return"]
         sub_ok = c.at[i, "substitute_allowed"] if "substitute_allowed" in c else True
         key = _resource(pd.Series([sub_ch]), c.loc[[i]]).iloc[0] if pd.notna(sub_ch) else None
@@ -206,12 +220,12 @@ def select(c: pd.DataFrame, slots: dict, dial: float = 1.0) -> pd.DataFrame:
             c.at[i, "resource"] = key
             c.at[i, "not_sent_reason"] = (f"Capacity full for {c.at[i, 'channel'].replace('_', ' ')}: "
                                           f"sent as {sub_ch.replace('_', ' ')} instead")
+            assigned.add(c.at[i, "hcp_id"])
         else:
-            res, owner = c.at[i, "resource"]
-            c.at[i, "status"] = "not_sent"
-            c.at[i, "not_sent_reason"] = (f"Not sent: no {res.replace('_', ' ')} slots left for {owner}"
-                                          if not pd.isna(owner) else
-                                          f"Not sent: no one to deliver a {res.replace('_', ' ')} (vacant territory)")
+            no_slot(i)
+    for i in failed:
+        if c.at[i, "status"] == "held":
+            no_slot(i)
 
     if dial > 0:                                                            # 5. not positive
         flat = c.status.isin(["sent", "substituted"]) & (c.final_return <= 0)

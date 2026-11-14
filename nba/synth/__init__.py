@@ -5,6 +5,8 @@ forward-looking capacity -> empty engine tables. Deterministic from the seed.
 """
 from __future__ import annotations
 
+import pickle
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -81,7 +83,8 @@ def generate(seed: int | None = None, scale: float = 1.0, data_dir: Path | None 
     world = entities.build(rng, design, scale)
     docs = content.documents(rng, design)
     log("Simulating 24 months of today's multi-channel plan ...")
-    hist = History(rng, design, world, docs).run()
+    sim = History(rng, design, world, docs)
+    hist = sim.run()
     log("Building brick sales and procedure volumes ...")
     out = _account_tables(world)
     out["address_vod"] = _addresses(rng, out["account_vod"], world)
@@ -114,4 +117,19 @@ def generate(seed: int | None = None, scale: float = 1.0, data_dir: Path | None 
         data.write_table(name, df, data_dir)
     # Simulator-only truth. The engine never reads this folder.
     data.write_hidden("hcp_cluster", world["hcp"][["id", "cluster"]].rename(columns={"id": "account_id"}), data_dir)
+    # The simulator's state at the end of the history, so the pilot (nba.feedback) carries on from it.
+    sim.clear_rows()
+    root = Path(data_dir) if data_dir else spec.data_dir()
+    with open(root / data.HIDDEN / "simulator.pkl", "wb") as f:
+        pickle.dump(sim, f)
+    # A copy of every table as generated, so each pilot run (nba run) starts from the same place.
+    base = root / "baseline"
+    shutil.rmtree(base, ignore_errors=True)
+    base.mkdir()
+    for p in root.glob("*.parquet"):
+        shutil.copy2(p, base / p.name)
+    (base / data.HIDDEN).mkdir()
+    shutil.copy2(root / data.HIDDEN / "simulator.pkl", base / data.HIDDEN / "simulator.pkl")
+    for sub in ("runs", "snapshots"):           # outputs of earlier runs no longer match the new data
+        shutil.rmtree(root / sub, ignore_errors=True)
     return {name: len(df) for name, df in out.items()}

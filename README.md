@@ -11,8 +11,8 @@ are in `docs/decisions.md`.
 | 1 | Project setup, schemas, synthetic data generator, data readiness report | Done |
 | 2 | Feature table and rules engine | Done |
 | 3 | Constraints and optimiser | Done |
-| 4 | Delivery, talk tracks, feedback simulator, 26-week runner | Next |
-| 5 | Measurement, return model, API, web screens | |
+| 4 | Delivery, talk tracks, feedback simulator, 26-week runner | Done |
+| 5 | Measurement, return model, API, web screens | Next |
 | 6 | Plain-language rule writing and quick impact test | |
 | 7 | Discovery (change detection) with the 10% cap | |
 
@@ -54,13 +54,19 @@ Then, for a pilot week:
 .venv/bin/nba week --week 1 --dial 1
 ```
 
+```bash
+make run
+```
+
 `make synth` writes about 550,000 rows across 25 tables to `data/` in a few seconds. `make readiness` prints the
 data readiness report (demo scene 1) and saves it to `data/readiness.json`. `nba features` builds the
 week's feature table (one row per account, 133 columns) and saves a snapshot. `nba triggers` runs the enabled
 rules and shows what fired and why; `--set` previews a threshold change (demo scene 2). `nba lint` checks every
 rule in the catalogue. `nba week` runs the whole week (triggers, constraint verdicts, optimiser) and prints what was
 held back and why, what is sent by channel, and the top actions by expected return; `--dial 0` shows what a
-rules-only engine would send (demo scene 3).
+rules-only engine would send (demo scene 3). `make run` runs the 26-week pilot (under two minutes): the engine
+in test territories, today's plan in control territories, and simulated rep and physician responses. Each week's
+Veeva suggestion payloads, agency file and rep talk tracks are written to `data/runs/week_NN/`.
 
 ## Look at the data with SQL
 
@@ -87,6 +93,9 @@ nba/            the engine (Python package)
   constraints.py allowed, delayed or blocked, naming the constraint
   optimiser.py  chance, value, cost, expected return; capacity, substitution, the rules-to-score dial
   pipeline.py   one weekly run and its summary
+  delivery.py   Veeva suggestion payloads, agency file, rep talk tracks with the grounding check
+  feedback.py   the simulated field: reps accept or dismiss, physicians respond (may read hidden clusters)
+  runner.py     the 26-week pilot
   cli.py        the `nba` command
 spec/           business specification (authority for rules, constraints, schemas, assumptions)
 tests/          automated tests (pytest)

@@ -72,6 +72,9 @@ class History:
         self.rows = {k: [] for k in ["call2_vod", "sent_email_vod", "agency_email",
                                       "agency_media", "event_attendee_vod", "hcp_stage_weekly"]}
         self.world = world
+        # Who follows today's plan. In the history, everyone; in the pilot, only control territories (nba.feedback).
+        self.plan = np.ones(self.n, bool)
+        self.unit_plan = None          # organisations that get today's KAM call plan (None = all)
 
     # ---------------------------------------------------------------- helpers
     def _touch(self, w, idx, channel):
@@ -103,7 +106,7 @@ class History:
     # ---------------------------------------------------------------- channels
     def _rep_calls(self, w, date):
         rng, n = self.rng, self.n
-        visit = self.eligible & self.has_rep & (rng.random(n) < self.visit_p)
+        visit = self.eligible & self.plan & self.has_rep & (rng.random(n) < self.visit_p)
         remote = visit & self.remote_ok & (rng.random(n) < 0.15)
         cancelled = visit & (rng.random(n) < 0.04)
         for channel, mask, ctype in [("rep_visit", visit & ~remote & ~cancelled, "face_to_face"),
@@ -122,7 +125,7 @@ class History:
 
     def _emails(self, w, date):
         rng, n = self.rng, self.n
-        email_ok = self.eligible & self.email_active & (self.email_since <= np.datetime64(date))
+        email_ok = self.eligible & self.plan & self.email_active & (self.email_since <= np.datetime64(date))
         rep_mask = email_ok & self.has_rep & (rng.random(n) < REP_EMAIL_PER_MONTH / WEEKS_PER_MONTH)
         mkt_mask = email_ok & self.double_ok & (rng.random(n) < self.design["history_simulation"][
             "marketing_email_per_month_if_consent"] / WEEKS_PER_MONTH)
@@ -199,6 +202,8 @@ class History:
     def _kam_calls(self, date):
         hcos = self.world["hcos"]
         units = hcos[hcos.hco_type.isin(["endoscopy_unit", "hospital"])]
+        if self.unit_plan is not None:
+            units = units[units.hco_id.isin(self.unit_plan)]
         p = units.unit_tier.map({"A": 1.0, "B": 0.5, "C": 0.2}).to_numpy() / WEEKS_PER_MONTH
         u = units[self.rng.random(len(units)) < p]
         terr = self.world["bricks"].set_index("brick_id").territory_id
@@ -211,41 +216,56 @@ class History:
             "next_step": self.rng.choice(["none", "send_material", "follow_up_call"], len(u), p=[0.5, 0.25, 0.25])}))
 
     # ---------------------------------------------------------------- main loop
+    def begin_week(self):
+        self.responded = np.zeros(self.n, bool)
+        self.access_landed = np.zeros(self.n, bool)
+
+    def plan_week(self, w, date):
+        """Today's multi-channel plan for one week (for physicians in self.plan)."""
+        self._rep_calls(w, date)
+        self._emails(w, date)
+        self._media(w, date)
+        self._events(w, date)
+        self._kam_calls(date)
+
+    def end_week(self, w, date):
+        """Move journey stages and record them."""
+        self.stage = self.beh.move_stages(self.rng, self.stage, self.responded, self.access_landed,
+                                          self.ever_attended, w - self.last_touch_week)
+        self.rows["hcp_stage_weekly"].append(pd.DataFrame({"account_id": self.h.id.to_numpy(), "week": date,
+                                                           "stage": self.stage}))
+
     def run(self) -> dict:
         for w in range(self.n_weeks):
             date = self.start + pd.Timedelta(weeks=w)
-            self.responded = np.zeros(self.n, bool)
-            self.access_landed = np.zeros(self.n, bool)
-            self._rep_calls(w, date)
-            self._emails(w, date)
-            self._media(w, date)
-            self._events(w, date)
-            self._kam_calls(date)
-            self.stage = self.beh.move_stages(self.rng, self.stage, self.responded, self.access_landed,
-                                              self.ever_attended, w - self.last_touch_week)
-            self.rows["hcp_stage_weekly"].append(pd.DataFrame({"account_id": self.h.id.to_numpy(), "week": date,
-                                                               "stage": self.stage}))
+            self.begin_week()
+            self.plan_week(w, date)
+            self.end_week(w, date)
         return self._tables()
 
-    def _tables(self) -> dict:
+    def clear_rows(self):
+        self.rows = {k: [] for k in self.rows}
+
+    def _tables(self, prefix: str = "") -> dict:
+        """Collect the week(s) of simulated rows into tables. `prefix` keeps ids unique across pilot weeks."""
         from nba.synth.behaviour import STAGES
         out = {k: pd.concat(v, ignore_index=True) for k, v in self.rows.items()}
         calls = out["call2_vod"].sort_values(["call_date", "account_id"], kind="stable").reset_index(drop=True)
-        calls.insert(0, "id", [f"CALL{i + 1:07d}" for i in range(len(calls))])
+        calls.insert(0, "id", [f"CALL{prefix}{i + 1:07d}" for i in range(len(calls))])
         out["call2_vod"] = calls
         se = out.pop("sent_email_vod").sort_values(["email_sent_date", "account_id"], kind="stable").reset_index(drop=True)
-        se.insert(0, "id", [f"SE{i + 1:07d}" for i in range(len(se))])
+        se.insert(0, "id", [f"SE{prefix}{i + 1:07d}" for i in range(len(se))])
         acts = []
         for kind, col, hours in [("open", "_resp", 3), ("click", "_click", 5), ("unsubscribe", "_unsub", 6)]:
             s = se[se[col]]
             acts.append(pd.DataFrame({"sent_email_id": s.id, "event_type": kind,
                                       "event_datetime": s.email_sent_date + pd.Timedelta(hours=hours)}))
         act = pd.concat(acts, ignore_index=True).sort_values(["event_datetime", "sent_email_id"], kind="stable")
-        act.insert(0, "id", [f"EA{i + 1:07d}" for i in range(len(act))])
+        act.insert(0, "id", [f"EA{prefix}{i + 1:07d}" for i in range(len(act))])
         out["email_activity_vod"] = act.reset_index(drop=True)
         out["sent_email_vod"] = se.drop(columns=["_resp", "_click", "_unsub"])
         ev = out["event_attendee_vod"]
-        ev.insert(0, "id", [f"EVA{i + 1:07d}" for i in range(len(ev))])
+        ev.insert(0, "id", [f"EVA{prefix}{i + 1:07d}" for i in range(len(ev))])
         out["hcp_stage_weekly"]["stage"] = np.array(STAGES)[out["hcp_stage_weekly"]["stage"].to_numpy()]
         out["final_stage"] = pd.Series(self.stage, index=self.h.id)
         out["unsubscribed"] = self.h.id.to_numpy()[self.unsub_week >= 0]

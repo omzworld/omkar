@@ -10,6 +10,7 @@ dependencies = [
     "pyarrow>=15",
     "pyyaml>=6",
     "typer>=0.12",
+    "jsonschema>=4",
 ]
 
 [project.optional-dependencies]

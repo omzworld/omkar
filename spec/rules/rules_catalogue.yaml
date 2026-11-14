@@ -347,7 +347,7 @@ rules:
   markets: *id001
   trigger_type: none
   enabled_at_launch: true
-  condition: emails_ignored_consecutive >= 2 and channel in ['marketing_email','rep_email']
+  condition: emails_ignored_consecutive >= 2 and channel in ['marketing_email','rep_email'] and days_since_last_email < {gap_after_two_ignored}
   action:
     channel: delay
     content_theme: none
@@ -2329,5 +2329,23 @@ rules:
     review'
   parameters:
     min_accept_rate: 0.4
+  owner: brand
+  notes: ''
+- id: R135
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: days_since_last_touch >= {nurture_gap_days} and stage != 'advocacy'
+  action:
+    channel: next_best
+    content_theme: next_theme
+    timing: this_week
+  priority: 40
+  reason_template: 'No touch in {days_since_last_touch} days: next step in the {stage} journey'
+  parameters:
+    nurture_gap_days: 14
   owner: brand
   notes: ''

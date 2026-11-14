@@ -55,11 +55,13 @@ def test_hidden_clusters_are_not_in_any_public_table(full):
 
 
 def test_engine_modules_never_read_hidden_data():
-    """Only the simulator (synth, feedback) may touch data/hidden."""
-    allowed = {"synth", "feedback", "data.py"}
+    """Only the simulator (synth, feedback) may touch data/hidden; the runner only copies the baseline back."""
+    allowed = {"synth", "feedback.py", "data.py", "runner.py"}
+    forbidden = ["read_hidden", "hcp_cluster", "HIDDEN", "simulator.pkl", ".cluster", '"cluster"']
     for path in (ROOT / "nba").rglob("*.py"):
         rel = path.relative_to(ROOT / "nba").parts
         if rel[0] in allowed:
             continue
         text = path.read_text(encoding="utf-8")
-        assert "read_hidden" not in text and "hcp_cluster" not in text, path
+        for word in forbidden:
+            assert word not in text, f"{path} mentions {word}"

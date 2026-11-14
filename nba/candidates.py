@@ -20,7 +20,7 @@ from nba.rules.catalogue import load
 
 NEXT_BEST_CHANNELS = ["rep_visit", "rep_email", "marketing_email"]
 THEME_SEQUENCE = ["introduction", "efficacy", "patient_case", "dosing", "real_world_evidence", "peer_experience"]
-STAGE_DEFAULT_THEME = {"curiosity": "efficacy", "consideration": "efficacy", "experience": "dosing",
+STAGE_DEFAULT_THEME = {"curiosity": "efficacy", "consideration": "patient_case", "experience": "dosing",
                        "loyalty": "real_world_evidence", "advocacy": "peer_experience"}
 FOLLOW_LAST_THEME = {"same_theme", "as_discussed", "as_requested"}
 # Rep-delivered channels that can fall back to a rep email when the rep has no slot left.

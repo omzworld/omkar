@@ -27,12 +27,17 @@ class WeekResult:
 
 
 def run_week(week: int, overrides: dict | None = None, dial: float = 1.0, data_dir: Path | None = None,
-             rebuild_features: bool = False, save: bool = True) -> WeekResult:
+             rebuild_features: bool = False, save: bool = True, arm: str | None = "test",
+             extra_rules: list | None = None) -> WeekResult:
+    """arm='test' runs the engine for test territories only (control territories keep today's plan);
+    arm=None runs it for everyone."""
     try:
         feats = features.build(week, data_dir) if rebuild_features else features.load_snapshot(week, data_dir)
     except FileNotFoundError:
         feats = features.build(week, data_dir)
-    triggers = engine.raise_triggers(feats, overrides)
+    triggers = engine.raise_triggers(feats, overrides, extra_rules)
+    if arm:
+        triggers = triggers[triggers.hcp_id.isin(feats.table.hcp_id[feats.table.pilot_arm == arm])]
     c = candidates.build(triggers, feats, data_dir)
     c = constraints.evaluate(c, feats, overrides)
     c["substitute_allowed"] = constraints.substitute_allowed(c, feats, overrides)

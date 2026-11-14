@@ -96,3 +96,37 @@ Open items to settle before the steps that need them:
   sends 753 for EUR 252k and EUR 78k.
 - To watch: R041 ("no response to the last three touches, rep finds out why") is about a third of what is sent in
   week 1. Tighten it (for example 4 touches, or exclude event invitations) if it crowds out other actions in the demo.
+
+## Step 4: delivery, feedback simulator and the 26-week runner
+
+- No language model key is available yet, so talk tracks use the template (`model_name: template`). The grounding
+  check still runs on every brief. `nba/llm.py` will be added when a key exists (set `ANTHROPIC_API_KEY` in the
+  environment settings); the brief structure stays the same.
+- The engine runs only for test territories; control territories (and the one vacant territory) carry on with today's
+  plan, simulated exactly as in the 24-month history. Paid media and the quarterly webinar continue in both arms.
+- `nba synth` now also saves the simulator's end-of-history state (`data/hidden/simulator.pkl`) and a copy of every
+  table (`data/baseline/`). `nba run` restores both, so every run starts from the same place.
+- Feedback per week: reps accept suggestions with the probabilities in `synthetic_design.yaml` (0.75 for a visit to a
+  rep-led physician, 0.55 otherwise, plus 0.01 a week as trust builds); dismiss reasons follow the design shares.
+  Accepted touches get responses from the hidden behaviour model. A rep visit wins email consent from a physician
+  without it 5% of the time (15% for an introduction visit). Completed months add brick sales; completed quarters add
+  endoscopy procedure volumes. Randomness is seeded by (seed, week).
+- Key account manager actions (R090 to R092, R108) are delivered as Veeva suggestions with record type Call; the
+  separate key account manager brief document remains deferred. The agency file is written each week.
+- Three changes after the first 26-week run showed test territories doing worse than control:
+  1. Added rule R135 (engagement_triggers, enabled): "no touch in 14 days: next step in the journey", channel chosen
+     by the optimiser. Without it the engine only considered physicians picked out by event-driven triggers, so as
+     touches fell, triggers fell too.
+  2. Fixed R020: its condition never used its own `gap_after_two_ignored` parameter, so two ignored emails delayed
+     email forever. Added `and days_since_last_email < {gap_after_two_ignored}`.
+  3. The optimiser now gives a physician their next best action when their best channel has no capacity left
+     (substitution still applies to a physician left with nothing).
+  Both catalogue changes were made in `gen_rules.py` and the catalogue regenerated.
+- Synthetic content: asset journey stages now follow the catalogue's content sequence (efficacy for curiosity, patient
+  case for consideration, dosing for experience, real-world evidence for loyalty, peer experience for advocacy), and
+  Plenvu/Moviprep gained a patient-case asset. The stage default for `next_theme` at consideration is now patient case.
+- First read of the 26-week run (full data): Movicol brick units in test territories +8.4% against +6.6% in control
+  (about 1.8 points of lift) with roughly half the touches. Average journey progress is lower in test (+0.09 stages
+  against +0.13): the engine does well with tier A Movicol physicians but under-serves Plenvu/Moviprep physicians,
+  whose value of response is low under the current assumptions. The quarterly pilot gate asks for 4 points of brick
+  lift. Calibrate in step 5 (measurement) with the brand and finance assumptions, not by tuning the simulator.
