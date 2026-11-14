@@ -35,7 +35,9 @@ def run_week(week: int, overrides: dict | None = None, dial: float = 1.0, data_d
         feats = features.build(week, data_dir) if rebuild_features else features.load_snapshot(week, data_dir)
     except FileNotFoundError:
         feats = features.build(week, data_dir)
-    triggers = engine.raise_triggers(feats, overrides, extra_rules)
+    from nba.rules import versions
+    overrides = {**versions.current_overrides(data_dir), **(overrides or {})}   # saved rule studio versions apply
+    triggers = engine.raise_triggers(feats, overrides, extra_rules, versions.paused(data_dir))
     if arm:
         triggers = triggers[triggers.hcp_id.isin(feats.table.hcp_id[feats.table.pilot_arm == arm])]
     c = candidates.build(triggers, feats, data_dir)

@@ -1,4 +1,4 @@
-"""Command line: synth, readiness, features, lint, triggers, week, run."""
+"""Command line: synth, readiness, features, lint, triggers, week, run, serve."""
 from __future__ import annotations
 
 import pandas as pd
@@ -137,6 +137,14 @@ def run(weeks: int = typer.Option(26, help="How many pilot weeks to run."),
                f"(Veeva payloads, agency files, talk tracks per week).")
     typer.echo(f"Suggestions accepted by reps: {out.accepted.sum():,} of {out.suggestions.sum():,} "
                f"({out.accepted.sum() / max(out.suggestions.sum(), 1):.0%}).")
+
+
+@app.command()
+def serve(port: int = typer.Option(8000, help="Port for the API and web app."),
+          host: str = typer.Option("127.0.0.1", help="Address to listen on.")):
+    """Start the API (and the web app, once built with `npm run build` in web/)."""
+    import uvicorn
+    uvicorn.run("nba.api:app", host=host, port=port)
 
 
 if __name__ == "__main__":

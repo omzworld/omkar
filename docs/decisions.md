@@ -130,3 +130,32 @@ Open items to settle before the steps that need them:
   against +0.13): the engine does well with tier A Movicol physicians but under-serves Plenvu/Moviprep physicians,
   whose value of response is low under the current assumptions. The quarterly pilot gate asks for 4 points of brick
   lift. Calibrate in step 5 (measurement) with the brand and finance assumptions, not by tuning the simulator.
+
+## Step 5: measurement, return model, API and the six screens
+
+- Web app: React + Vite + Tailwind in `web/`, plain JavaScript (no TypeScript) to keep it readable. Charts are small
+  hand-written SVG components (no chart library): one axis, thin marks, a legend plus direct end labels, hover
+  read-outs. Test territories are blue, control orange (validated for colour-blind separation in light and dark).
+  The built app is served by the engine itself (`nba serve`), so the demo is one process on one port.
+- Rule studio versions are saved to `data/rule_versions.json` (version 1 is the catalogue, never overwritten); every
+  later run uses the latest version. A version can also pause a rule.
+- Pilot runs from the screens continue from the last completed week (run to week 8, then on to 26); "Start again"
+  restarts from week 1. Saved rule versions apply from the next week run.
+- Feedback rule R134 counts `rule_triggers_30d` as triggers raised (as its condition says), not suggestions. Its
+  proposal tightens the rule's numeric threshold by a quarter in the direction that makes it fire less; a rule with
+  no threshold is proposed for pausing.
+- Simulator additions (documented field behaviour, so acceptance differs by rule and the engine has something to
+  learn): reps accept suggestions for physicians they visited in the last 30 days at 0.55 times the usual rate and
+  usually mark them "seen recently"; suggestions for tier C accounts at 0.6 times, usually "not a priority".
+- Measurement: brick lift is the growth of Movicol units in test territories minus control, completed pilot months
+  against the same number of months before. Engaged = responded at least once. Cost uses the touch costs in the
+  assumptions file.
+- Return model inputs on screen: fee per quarter, gross margin (default 70%, an assumption added here), the client's
+  real brand sales per quarter (the synthetic market is far too small: about EUR 270k a quarter in test territories,
+  against a EUR 180k fee), the lift to use, and whether to count the touch cost saving (only real if reps' freed time
+  is redeployed). Break-even shows 0 when the saving alone covers the fee.
+- Results after 26 weeks with the demo walkthrough's changes (R075 at 6%, R077 tightened at week 8): brick lift
+  +0.7 points; touches per physician 6.1 in test against 12.1 in control; cost per engaged physician EUR 524 against
+  EUR 819; but fewer test physicians moved up a stage (10.2% against 14.3%). Pilot gates met: rep acceptance and reach.
+  Not met: 4-point lift, 2% monthly consent growth (test 1.2%), EUR 45 cost per engaged physician (unreachable while a
+  rep visit costs EUR 150). These are calibration questions for the brand and finance assumptions.

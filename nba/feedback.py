@@ -65,7 +65,14 @@ def _arms(sim, data_dir) -> tuple[np.ndarray, list]:
 
 # --------------------------------------------------------------------------------------- reps and suggestions
 
-def rep_decisions(sim, suggestions: pd.DataFrame, week: int, rng) -> pd.DataFrame:
+RECENT_VISIT_DAYS = 30          # a rep is less keen on a physician they saw in the last month ...
+RECENT_VISIT_ACCEPT_FACTOR = 0.55
+RECENT_VISIT_SEEN_RECENTLY = 0.7  # ... and then usually says "seen recently"
+LOW_TIER_ACCEPT_FACTOR = 0.6     # reps push back on suggestions for low-potential (tier C) accounts ...
+LOW_TIER_NOT_A_PRIORITY = 0.7    # ... and then usually say "not a priority"
+
+
+def rep_decisions(sim, suggestions: pd.DataFrame, week: int, rng, sent: pd.DataFrame | None = None) -> pd.DataFrame:
     """Each rep accepts or dismisses each suggestion."""
     if suggestions.empty:
         return suggestions
@@ -74,11 +81,23 @@ def rep_decisions(sim, suggestions: pd.DataFrame, week: int, rng) -> pd.DataFram
     base = np.where((cluster == "rep_led") & (suggestions.suggested_channel == "rep_visit"),
                     fs["rep_accept_probability"]["rep_led_cluster_rep_visit"], fs["rep_accept_probability"]["other"])
     p = np.clip(base + fs["accept_probability_increase_per_week_with_reason"] * (week - 1), 0, 0.95)
+    recent = np.zeros(len(suggestions), bool)
+    if sent is not None and "days_since_rep_visit" in sent:
+        days = suggestions.account_id.map(sent.drop_duplicates("hcp_id").set_index("hcp_id").days_since_rep_visit)
+        recent = (days < RECENT_VISIT_DAYS).fillna(False).to_numpy()
+        p = np.where(recent, p * RECENT_VISIT_ACCEPT_FACTOR, p)
+    low = np.zeros(len(suggestions), bool)
+    if sent is not None and "tier" in sent:
+        low = (suggestions.account_id.map(sent.drop_duplicates("hcp_id").set_index("hcp_id").tier) == "C").to_numpy()
+        p = np.where(low, p * LOW_TIER_ACCEPT_FACTOR, p)
     accepted = rng.random(len(suggestions)) < p
     reasons, probs = zip(*fs["dismiss_reasons"].items())
+    reason = rng.choice(reasons, len(suggestions), p=np.array(probs) / sum(probs))
+    reason = np.where(recent & (rng.random(len(suggestions)) < RECENT_VISIT_SEEN_RECENTLY), "seen_recently", reason)
+    reason = np.where(low & (rng.random(len(suggestions)) < LOW_TIER_NOT_A_PRIORITY), "not_a_priority", reason)
     s = suggestions.copy()
     s["status"] = np.where(accepted, "accepted", "dismissed")
-    s["dismiss_reason"] = np.where(accepted, None, rng.choice(reasons, len(s), p=np.array(probs) / sum(probs)))
+    s["dismiss_reason"] = np.where(accepted, None, reason)
     return s
 
 
@@ -265,7 +284,7 @@ def simulate_week(week: int, sent: pd.DataFrame, suggestions: pd.DataFrame, data
 
     sim.begin_week()
     sim.plan_week(w, date)                                   # control territories: today's plan
-    suggestions = rep_decisions(sim, suggestions, week, rng)
+    suggestions = rep_decisions(sim, suggestions, week, rng, sent)
     execute_engine(sim, w, date, sent, suggestions, week, rng)
     intro = set(sent[(sent.final_channel == "rep_visit") & (sent.content_theme == "introduction")].hcp_id)
     won = capture_consent(sim, date, rng, intro)

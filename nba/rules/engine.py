@@ -16,10 +16,11 @@ TRIGGER_COLUMNS = ["trigger_id", "run_week", "hcp_id", "market", "territory_id",
                    "origin"]
 
 
-def trigger_rules(overrides: dict | None = None, extra: list[Rule] | None = None) -> list[Rule]:
+def trigger_rules(overrides: dict | None = None, extra: list[Rule] | None = None,
+                  paused: set | None = None) -> list[Rule]:
     """Enabled rules that raise triggers, with any parameter overrides from the rule studio applied."""
     overrides = overrides or {}
-    rules = [r for r in load(enabled_only=True) + (extra or []) if r.raises_triggers]
+    rules = [r for r in load(enabled_only=True) + (extra or []) if r.raises_triggers and r.id not in (paused or set())]
     return [r.with_parameters(**overrides[r.id]) if r.id in overrides else r for r in rules]
 
 
@@ -74,10 +75,11 @@ def reasons(rule: Rule, rows: pd.DataFrame) -> list[str]:
     return out
 
 
-def raise_triggers(feats: Features, overrides: dict | None = None, extra: list[Rule] | None = None) -> pd.DataFrame:
+def raise_triggers(feats: Features, overrides: dict | None = None, extra: list[Rule] | None = None,
+                   paused: set | None = None) -> pd.DataFrame:
     t = feats.table
     frames = []
-    for rule in trigger_rules(overrides, extra):
+    for rule in trigger_rules(overrides, extra, paused):
         rows = t[fired(rule, feats)]
         if rows.empty:
             continue

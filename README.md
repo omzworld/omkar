@@ -12,13 +12,28 @@ are in `docs/decisions.md`.
 | 2 | Feature table and rules engine | Done |
 | 3 | Constraints and optimiser | Done |
 | 4 | Delivery, talk tracks, feedback simulator, 26-week runner | Done |
-| 5 | Measurement, return model, API, web screens | Next |
-| 6 | Plain-language rule writing and quick impact test | |
+| 5 | Measurement, return model, API, web screens | Done |
+| 6 | Plain-language rule writing and quick impact test | Next |
 | 7 | Discovery (change detection) with the 10% cap | |
 
 ## Run it
 
-You need Python 3.11 or later and [uv](https://docs.astral.sh/uv/).
+You need Python 3.11 or later, [uv](https://docs.astral.sh/uv/) and Node.js 20 or later.
+
+The demo (all six screens):
+
+```bash
+make setup
+```
+
+```bash
+make demo
+```
+
+Then open http://127.0.0.1:8000. `make demo` generates fresh data, builds the web app and starts the engine. Run
+the pilot from the Feedback screen (to week 8) and the Results screen (to week 26); no command line needed.
+
+Everything below is the same engine from the command line.
 
 ```bash
 make setup
@@ -96,6 +111,11 @@ nba/            the engine (Python package)
   delivery.py   Veeva suggestion payloads, agency file, rep talk tracks with the grounding check
   feedback.py   the simulated field: reps accept or dismiss, physicians respond (may read hidden clusters)
   runner.py     the 26-week pilot
+  measure.py    test vs control, lift, cost per engaged physician, pilot gates, return model
+  proposals.py  acceptance by rule and the engine's rule change proposals (R134)
+  rules/versions.py  saved rule versions from the rule studio
+  api.py        the web API (FastAPI)
+web/            the web app (React + Vite + Tailwind): six screens, one per demo scene
   cli.py        the `nba` command
 spec/           business specification (authority for rules, constraints, schemas, assumptions)
 tests/          automated tests (pytest)
