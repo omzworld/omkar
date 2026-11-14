@@ -1,0 +1,56 @@
+# Return model inputs. Owned by finance. Every value is editable in the rule studio and shown with its tier.
+version: "0.1"
+currency: EUR
+
+touch_cost:                 # fully loaded cost per executed touch
+  rep_visit: 150
+  remote_call: 60
+  rep_email: 10
+  marketing_email: 2
+  webinar: 35               # per attendee seat
+  paid_media: 4             # per thousand impressions
+  direct_mail: 6
+  kam_brief: 120            # per brief prepared and delivered
+  kam_visit: 250
+  msl: 300
+
+stage_move_value:           # extra units per year when one physician moves one stage, times margin
+  Movicol:
+    UK: {curiosity_to_consideration: 60, consideration_to_experience: 220, experience_to_loyalty: 420, loyalty_to_advocacy: 150}
+    DE: {curiosity_to_consideration: 55, consideration_to_experience: 200, experience_to_loyalty: 380, loyalty_to_advocacy: 140}
+  Plenvu_Moviprep:
+    unit_basis: procedure_volume
+    value_per_procedure_point: 9      # EUR per percentage point of unit procedures on Norgine preparation
+  Xifaxan:
+    UK: {consideration_to_experience: 900, experience_to_loyalty: 1500}
+    DE: {consideration_to_experience: 850, experience_to_loyalty: 1400}
+
+risk_value:                 # value at risk for risk triggers
+  brick_decline: 0.6        # share of the brick's prior-quarter decline attributable to the trigger HCPs
+  competitor_share_point: 40
+
+value_allocation:
+  within_brick: specialty_weight_times_practice_size
+  specialty_weight: {gp: 1.0, gastroenterology: 1.6, hepatology: 2.0, paediatrics: 0.8, internal_medicine: 0.9}
+
+chance_tiers:
+  tier1_min_touches: 10
+  tier2_min_segment_touches: 50
+  tier3_source: iqvia_channel_preference.response_benchmark
+
+decay_per_week_waiting: 0.08
+
+discovery_cap:
+  max_share_of_sent_items: 0.10      # per market per week; highest expected return first
+  min_score_to_consider: 0.6
+  explanation_features: 3
+minimum_expected_return: 0
+floor_rules_enabled: false
+
+run_cost:                   # for the return model, per quarter
+  build_and_run_fee_per_quarter: 180000
+  share_of_fee_at_risk_on_lift: 0.30
+
+pilot_gates:
+  weekly: {suggestion_acceptance_min: 0.45, consent_growth_min_pct_per_month: 2, reach_min_pct: 60}
+  quarterly: {brick_lift_vs_control_min_pct: 4, cost_per_engaged_hcp_max: 45}

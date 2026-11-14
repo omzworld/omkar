@@ -1,0 +1,2333 @@
+catalogue_version: '0.1'
+brand_codes:
+- Movicol
+- Plenvu_Moviprep
+- Xifaxan
+- Rare_disease
+- all
+markets: &id001
+- UK
+- DE
+rules:
+- id: R001
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel in ['marketing_email','rep_email'] and consent_email == False
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: no recorded email consent in {market}'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R002
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'remote_call' and consent_remote == False
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: no consent for remote calls'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R003
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel in ['paid_media','portal'] and consent_digital_tracking == False
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: no consent for tracked digital'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R004
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: no_promo_flag == True
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: HCP flagged no-promotion in OpenData'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R005
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: opt_out_any == True
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: HCP opted out of all promotional contact'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R006
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: asset_status != 'approved'
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: asset {asset_id} not approved in PromoMats'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R007
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: asset_market != market
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: asset {asset_id} not approved for {market}'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R008
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: days_to_asset_expiry <= {min_days_to_expiry}
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 95
+  reason_template: 'Blocked: asset {asset_id} expires in {days_to_asset_expiry} days'
+  parameters:
+    min_days_to_expiry: 14
+  owner: compliance
+  notes: ''
+- id: R009
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: asset_language != hcp_language
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 95
+  reason_template: 'Blocked: asset language does not match HCP language'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R010
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets:
+  - DE
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'marketing_email' and consent_double_opt_in == False
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: Germany requires double opt-in for email'
+  parameters: {}
+  owner: compliance
+  notes: German UWG practice; confirm with local compliance
+- id: R011
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets:
+  - UK
+  trigger_type: none
+  enabled_at_launch: true
+  condition: hcp_prescriber == False and content_theme in ['dosing','efficacy'] and channel == 'rep_visit'
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 95
+  reason_template: 'Blocked: promotional detail to non-prescriber'
+  parameters: {}
+  owner: compliance
+  notes: 'ABPI Code: promotion only to those who can prescribe or supply'
+- id: R012
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: hcp_status != 'active'
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: HCP record inactive in OpenData'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R013
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'sample' and samples_ytd >= {max_samples_year}
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 95
+  reason_template: 'Blocked: annual sample limit reached'
+  parameters:
+    max_samples_year: 4
+  owner: compliance
+  notes: ''
+- id: R014
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: hcp_role == 'medical_only_contact'
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: medical-only contact, no commercial touch'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R015
+  family: eligibility_and_consent
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'direct_mail' and postal_address_verified == False
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 90
+  reason_template: 'Blocked: postal address not verified in OpenData'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R016
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: touches_month >= cap_touches_month
+  action:
+    channel: delay
+    content_theme: none
+    timing: next_month
+  priority: 90
+  reason_template: 'Delayed: monthly cap of {cap_touches_month} touches reached'
+  parameters:
+    cap_touches_month: from cadence.csv
+  owner: brand
+  notes: ''
+- id: R017
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'rep_visit' and days_since_rep_visit < {min_gap_visit}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 90
+  reason_template: 'Delayed: last visit {days_since_rep_visit} days ago, minimum gap {min_gap_visit}'
+  parameters:
+    min_gap_visit: 21
+  owner: brand
+  notes: ''
+- id: R018
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel in ['marketing_email','rep_email'] and days_since_last_email < {min_gap_email}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 90
+  reason_template: 'Delayed: last email {days_since_last_email} days ago, minimum gap {min_gap_email}'
+  parameters:
+    min_gap_email: 7
+  owner: brand
+  notes: ''
+- id: R019
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: days_since_last_touch < {min_gap_any}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 90
+  reason_template: 'Delayed: last touch {days_since_last_touch} days ago, minimum gap {min_gap_any}'
+  parameters:
+    min_gap_any: 4
+  owner: brand
+  notes: ''
+- id: R020
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: emails_ignored_consecutive >= 2 and channel in ['marketing_email','rep_email']
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 88
+  reason_template: 'Delayed: two emails ignored, email gap doubled to {gap_after_two_ignored} days'
+  parameters:
+    gap_after_two_ignored: 21
+  owner: brand
+  notes: ''
+- id: R021
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: same_theme_touches_7d >= 1
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 85
+  reason_template: 'Delayed: same theme already sent on another channel in the last 7 days'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R022
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'rep_visit' and rep_visits_90d >= {max_visits_90d}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 85
+  reason_template: 'Delayed: {rep_visits_90d} visits in 90 days, maximum {max_visits_90d}'
+  parameters:
+    max_visits_90d: 4
+  owner: brand
+  notes: ''
+- id: R023
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'webinar' and webinar_invites_30d >= {max_invites_30d}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 80
+  reason_template: 'Delayed: {webinar_invites_30d} webinar invites in 30 days'
+  parameters:
+    max_invites_30d: 1
+  owner: brand
+  notes: ''
+- id: R024
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: channel == 'paid_media' and media_impressions_30d >= {max_impressions_30d}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 80
+  reason_template: 'Delayed: paid frequency cap reached'
+  parameters:
+    max_impressions_30d: 6
+  owner: brand
+  notes: ''
+- id: R025
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: dismissals_30d >= 2 and channel in ['rep_visit','rep_email']
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 85
+  reason_template: 'Delayed: rep dismissed two suggestions for this HCP this month'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R026
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: last_dismiss_reason == 'seen_recently' and days_since_dismiss < {gap_after_seen_recently}
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 85
+  reason_template: 'Delayed: rep reported HCP seen recently'
+  parameters:
+    gap_after_seen_recently: 14
+  owner: brand
+  notes: ''
+- id: R027
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: hcp_on_leave == True
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 80
+  reason_template: 'Delayed: HCP absence recorded'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R028
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: is_public_holiday_week == True and channel in ['marketing_email','paid_media']
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 70
+  reason_template: 'Delayed: holiday week, digital paused'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R029
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: channel == 'rep_visit' and territory_vacant == True
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 90
+  reason_template: 'Blocked: territory vacant, no rep to deliver'
+  parameters: {}
+  owner: field
+  notes: ''
+- id: R030
+  family: cadence_and_caps
+  engine: constraints
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: channel == 'rep_visit' and rep_capacity_slots_week <= 0
+  action:
+    channel: delay
+    content_theme: none
+    timing: this_week
+  priority: 90
+  reason_template: 'Delayed: rep has no open slots this week'
+  parameters: {}
+  owner: field
+  notes: ''
+- id: R031
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: email_opens_30d >= 2 and email_clicks_30d >= 1 and stage == 'consideration'
+  action:
+    channel: webinar
+    content_theme: clinical_evidence
+    timing: this_week
+  priority: 70
+  reason_template: Opened {email_opens_30d} emails and clicked {email_clicks_30d} in 30 days; invite to the webinar
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R032
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: email_opens_30d >= 2 and email_clicks_30d == 0
+  action:
+    channel: rep_email
+    content_theme: patient_case
+    timing: this_week
+  priority: 60
+  reason_template: Opened two emails without clicking; send the patient case by rep email
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R033
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: webinar_attended_30d == True
+  action:
+    channel: rep_visit
+    content_theme: dosing
+    timing: within_10_working_days
+  priority: 80
+  reason_template: Attended the webinar {days_since_webinar} days ago; rep visit on dosing within 10 working days
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R034
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: webinar_registered_30d == True and webinar_attended_30d == False
+  action:
+    channel: marketing_email
+    content_theme: clinical_evidence
+    timing: this_week
+  priority: 55
+  reason_template: Registered but missed the webinar; send the recording
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R035
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: portal_visits_30d >= 2
+  action:
+    channel: marketing_email
+    content_theme: next_theme
+    timing: this_week
+  priority: 55
+  reason_template: Visited the brand portal {portal_visits_30d} times; send the next theme in sequence
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R036
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: portal_content_viewed == 'dosing'
+  action:
+    channel: rep_email
+    content_theme: dosing
+    timing: this_week
+  priority: 60
+  reason_template: Viewed dosing content on the portal; rep email with the dosing asset
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R037
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: event_attended_days_ago <= 14 and event_type == 'congress'
+  action:
+    channel: rep_email
+    content_theme: clinical_evidence
+    timing: this_week
+  priority: 70
+  reason_template: Met at congress {event_attended_days_ago} days ago; follow up by rep email
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R038
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: event_upcoming_days <= 21 and event_registered == False and tier in ['A','B']
+  action:
+    channel: marketing_email
+    content_theme: event_invite
+    timing: this_week
+  priority: 50
+  reason_template: Event in {event_upcoming_days} days; invite tier {tier} physician
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R039
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: days_since_last_touch >= {no_touch_days} and tier == 'A'
+  action:
+    channel: rep_visit
+    content_theme: efficacy
+    timing: this_week
+  priority: 75
+  reason_template: Tier A physician with no touch in {days_since_last_touch} days
+  parameters:
+    no_touch_days: 60
+  owner: brand
+  notes: ''
+- id: R040
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: days_since_last_touch >= {no_touch_days_b} and tier == 'B'
+  action:
+    channel: rep_email
+    content_theme: efficacy
+    timing: this_week
+  priority: 55
+  reason_template: Tier B physician with no touch in {days_since_last_touch} days
+  parameters:
+    no_touch_days_b: 90
+  owner: brand
+  notes: ''
+- id: R041
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: touches_ignored_consecutive >= 3
+  action:
+    channel: rep_visit
+    content_theme: reason_check
+    timing: this_week
+  priority: 65
+  reason_template: No response to the last three touches; route to the rep to find out why, pause digital
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R042
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: stage_regressed == True
+  action:
+    channel: rep_visit
+    content_theme: efficacy
+    timing: this_week
+  priority: 70
+  reason_template: Stage moved back from {prev_stage} to {stage}; rep visit with efficacy
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R043
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: new_in_target == True and days_since_added <= 30
+  action:
+    channel: marketing_email
+    content_theme: first_contact
+    timing: this_week
+  priority: 60
+  reason_template: Added to target list {days_since_added} days ago; start the first-contact sequence
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R044
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: new_in_target == True and tier == 'A'
+  action:
+    channel: rep_visit
+    content_theme: introduction
+    timing: this_week
+  priority: 70
+  reason_template: New tier A physician in a target brick; introduction visit
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R045
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: last_touch_responded == True and days_since_last_touch >= {follow_up_days}
+  action:
+    channel: next_best
+    content_theme: next_theme
+    timing: this_week
+  priority: 60
+  reason_template: Responded to {last_touch_theme} on {last_touch_channel}; move to the next theme
+  parameters:
+    follow_up_days: 7
+  owner: brand
+  notes: ''
+- id: R046
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: last_touch_responded == False and days_since_last_touch >= {retry_days}
+  action:
+    channel: alternate_channel
+    content_theme: same_theme
+    timing: this_week
+  priority: 50
+  reason_template: No response to {last_touch_theme} on {last_touch_channel}; retry on the next best channel
+  parameters:
+    retry_days: 10
+  owner: brand
+  notes: ''
+- id: R047
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: rep_visit_completed_days_ago <= 3 and rep_visit_next_step == 'send_material'
+  action:
+    channel: rep_email
+    content_theme: as_discussed
+    timing: this_week
+  priority: 85
+  reason_template: Rep logged a material request at the visit; send it
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R048
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: survey_response_30d == True and survey_interest == 'access'
+  action:
+    channel: marketing_email
+    content_theme: access
+    timing: this_week
+  priority: 50
+  reason_template: Survey shows access interest; send the coverage asset
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R049
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: unsubscribe_30d == True
+  action:
+    channel: rep_visit
+    content_theme: reason_check
+    timing: this_week
+  priority: 60
+  reason_template: Unsubscribed from email this month; rep to check and record preference
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R050
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: medical_inquiry_30d == True
+  action:
+    channel: rep_email
+    content_theme: as_requested
+    timing: this_week
+  priority: 65
+  reason_template: Medical information request logged; rep follow-up with approved response
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R051
+  family: channel_choice
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: hcp_touch_count_channel >= {min_history}
+  action:
+    channel: prefer
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: Use the physician's own response rate on {channel} ({hcp_response_rate_channel})
+  parameters:
+    min_history: 10
+  owner: brand
+  notes: Chance tier 1
+- id: R052
+  family: channel_choice
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: hcp_touch_count_channel < {min_history}
+  action:
+    channel: prefer
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: Use the segment response rate for {specialty} in {market} on {channel}
+  parameters:
+    min_history: 10
+  owner: brand
+  notes: Chance tier 2
+- id: R053
+  family: channel_choice
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: segment_touch_count_channel < {min_segment_history}
+  action:
+    channel: prefer
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: Use the IQVIA channel preference benchmark for {specialty} in {market}
+  parameters:
+    min_segment_history: 50
+  owner: brand
+  notes: Chance tier 3
+- id: R054
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: tier == 'C' and channel == 'rep_visit' and trigger_type == 'opportunity'
+  action:
+    channel: downgrade
+    content_theme: same_theme
+    timing: this_week
+  priority: 40
+  reason_template: 'Tier C physician: digital first, rep visit only on a risk trigger'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R055
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: channel_lean == 'digital' and trigger_type == 'opportunity'
+  action:
+    channel: marketing_email
+    content_theme: same_theme
+    timing: this_week
+  priority: 40
+  reason_template: 'Digital-lean physician: opportunity triggers go digital first'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R056
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: channel_lean == 'rep' and trigger_type == 'risk'
+  action:
+    channel: rep_visit
+    content_theme: same_theme
+    timing: this_week
+  priority: 40
+  reason_template: 'Rep-lean physician: risk triggers go to the rep'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R057
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: practice_type == 'hospital' and specialty in ['gastroenterology','hepatology']
+  action:
+    channel: rep_visit
+    content_theme: same_theme
+    timing: this_week
+  priority: 35
+  reason_template: 'Hospital specialist: rep or KAM channel preferred'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R058
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: rural_flag == True and channel == 'rep_visit'
+  action:
+    channel: remote_call
+    content_theme: same_theme
+    timing: this_week
+  priority: 35
+  reason_template: 'Rural practice: remote call replaces the visit'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R059
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: age_band == 'under_40' and channel == 'direct_mail'
+  action:
+    channel: marketing_email
+    content_theme: same_theme
+    timing: this_week
+  priority: 30
+  reason_template: 'Younger physician: email replaces direct mail'
+  parameters: {}
+  owner: brand
+  notes: 'IQVIA 2025: digital natives show lower face-to-face preference'
+- id: R060
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets:
+  - UK
+  trigger_type: none
+  enabled_at_launch: false
+  condition: specialty == 'gp' and channel == 'rep_visit' and trigger_type == 'opportunity'
+  action:
+    channel: rep_email
+    content_theme: same_theme
+    timing: this_week
+  priority: 35
+  reason_template: 'UK GP: rep email first; UK GPs show 34% preference for individual interactions (IQVIA 2024)'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R061
+  family: channel_choice
+  engine: rules
+  brand: all
+  markets:
+  - DE
+  trigger_type: none
+  enabled_at_launch: false
+  condition: specialty == 'gp' and trigger_type == 'opportunity' and consent_email == False
+  action:
+    channel: rep_visit
+    content_theme: same_theme
+    timing: this_week
+  priority: 35
+  reason_template: 'German GP without email consent: rep visit carries the message'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R062
+  family: channel_choice
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'rep_visit' and rep_capacity_slots_week == 0 and substitute_return > 0
+  action:
+    channel: rep_email
+    content_theme: same_theme
+    timing: this_week
+  priority: 0
+  reason_template: Rep slots full; same content by rep email still has positive return
+  parameters: {}
+  owner: brand
+  notes: Substitution rule
+- id: R063
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: stage == 'curiosity'
+  action:
+    channel: as_chosen
+    content_theme: efficacy
+    timing: this_week
+  priority: 30
+  reason_template: 'Curiosity stage: efficacy content first'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R064
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: stage == 'consideration' and theme_received('efficacy') == True
+  action:
+    channel: as_chosen
+    content_theme: patient_case
+    timing: this_week
+  priority: 30
+  reason_template: 'Consideration stage after efficacy: patient case'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R065
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: stage == 'consideration' and theme_received('patient_case') == True
+  action:
+    channel: as_chosen
+    content_theme: dosing
+    timing: this_week
+  priority: 30
+  reason_template: 'Consideration after patient case: dosing'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R066
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: stage == 'experience'
+  action:
+    channel: as_chosen
+    content_theme: dosing
+    timing: this_week
+  priority: 30
+  reason_template: 'Experience stage: dosing and titration until repeat prescribing'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R067
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: stage == 'experience' and days_in_stage > {stall_days}
+  action:
+    channel: as_chosen
+    content_theme: access
+    timing: this_week
+  priority: 45
+  reason_template: 'Stalled in experience for {days_in_stage} days: access and coverage content'
+  parameters:
+    stall_days: 60
+  owner: brand
+  notes: ''
+- id: R068
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: stage == 'loyalty'
+  action:
+    channel: as_chosen
+    content_theme: real_world_evidence
+    timing: this_week
+  priority: 30
+  reason_template: 'Loyalty stage: real-world evidence and patient profiles'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R069
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: stage == 'advocacy'
+  action:
+    channel: as_chosen
+    content_theme: peer_experience
+    timing: this_week
+  priority: 30
+  reason_template: 'Advocacy: speaker and peer-experience content only'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R070
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: theme_ignored_count(content_theme) >= 2
+  action:
+    channel: as_chosen
+    content_theme: next_theme
+    timing: this_week
+  priority: 50
+  reason_template: Theme {content_theme} ignored twice; skip to the next theme
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R071
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: theme_received_days_ago(content_theme) < {no_repeat_days}
+  action:
+    channel: as_chosen
+    content_theme: next_theme
+    timing: this_week
+  priority: 45
+  reason_template: Theme {content_theme} sent {theme_received_days_ago} days ago; do not repeat
+  parameters:
+    no_repeat_days: 30
+  owner: brand
+  notes: ''
+- id: R072
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: asset_variant_count(content_theme, channel) > 1
+  action:
+    channel: as_chosen
+    content_theme: best_variant
+    timing: this_week
+  priority: 20
+  reason_template: Several approved variants; use the variant with the best response in {market}
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R073
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: hcp_language != market_language
+  action:
+    channel: as_chosen
+    content_theme: same_theme
+    timing: this_week
+  priority: 20
+  reason_template: Use the asset in the physician's recorded language
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R074
+  family: content_sequence
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: content_theme == 'safety' and stage in ['experience','loyalty']
+  action:
+    channel: as_chosen
+    content_theme: safety
+    timing: this_week
+  priority: 95
+  reason_template: 'Safety update available: send to all prescribers in stage {stage} regardless of sequence'
+  parameters: {}
+  owner: medical
+  notes: ''
+- id: R075
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: brick_volume_qoq_pct <= -{decline_pct} and days_since_rep_visit >= 60 and tier in ['A','B']
+  action:
+    channel: rep_visit
+    content_theme: efficacy
+    timing: this_week
+  priority: 85
+  reason_template: Brick {brick_id} down {brick_volume_qoq_pct}% on prior quarter, no visit in {days_since_rep_visit} days
+  parameters:
+    decline_pct: 8
+  owner: brand
+  notes: ''
+- id: R076
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: brick_volume_qoq_pct <= -{decline_pct} and tier == 'C'
+  action:
+    channel: marketing_email
+    content_theme: efficacy
+    timing: this_week
+  priority: 55
+  reason_template: 'Brick {brick_id} down {brick_volume_qoq_pct}%: efficacy email to tier C'
+  parameters:
+    decline_pct: 8
+  owner: brand
+  notes: ''
+- id: R077
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: brick_volume_qoq_pct >= {growth_pct} and stage == 'consideration'
+  action:
+    channel: rep_email
+    content_theme: patient_case
+    timing: this_week
+  priority: 60
+  reason_template: 'Brick growing {brick_volume_qoq_pct}%: convert considerers with the patient case'
+  parameters:
+    growth_pct: 10
+  owner: brand
+  notes: ''
+- id: R078
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: brick_competitor_share_change >= {comp_pct}
+  action:
+    channel: rep_visit
+    content_theme: efficacy
+    timing: this_week
+  priority: 70
+  reason_template: 'Competitor share in brick up {brick_competitor_share_change} points: efficacy visit'
+  parameters:
+    comp_pct: 3
+  owner: brand
+  notes: ''
+- id: R079
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: account_type == 'pharmacy' and pharmacy_dispensing_qoq_pct >= {disp_pct}
+  action:
+    channel: rep_visit
+    content_theme: pharmacy_support
+    timing: this_week
+  priority: 55
+  reason_template: 'Pharmacy dispensing up {pharmacy_dispensing_qoq_pct}%: pharmacy support visit'
+  parameters:
+    disp_pct: 10
+  owner: brand
+  notes: ''
+- id: R080
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: account_type == 'pharmacy' and days_since_last_touch >= 90
+  action:
+    channel: rep_email
+    content_theme: pharmacy_support
+    timing: this_week
+  priority: 45
+  reason_template: Pharmacy not contacted in {days_since_last_touch} days
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R081
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: paediatric_prescriber == True and theme_received('paediatric') == False
+  action:
+    channel: marketing_email
+    content_theme: paediatric
+    timing: this_week
+  priority: 60
+  reason_template: Paediatric prescriber has not received the paediatric asset
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R082
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: specialty == 'gp' and stage == 'curiosity' and consent_email == True
+  action:
+    channel: marketing_email
+    content_theme: efficacy
+    timing: this_week
+  priority: 50
+  reason_template: 'GP at curiosity with email consent: efficacy email starts the sequence'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R083
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: specialty == 'gp' and stage == 'curiosity' and consent_email == False and tier in ['A','B']
+  action:
+    channel: rep_visit
+    content_theme: introduction
+    timing: this_week
+  priority: 55
+  reason_template: 'GP at curiosity without email consent: introduction visit, capture consent'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R084
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: care_home_prescriber == True
+  action:
+    channel: rep_email
+    content_theme: chronic_constipation_elderly
+    timing: this_week
+  priority: 50
+  reason_template: 'Care-home prescriber: elderly chronic constipation asset'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R085
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: guideline_update_days_ago <= 30 and specialty in ['gp','gastroenterology']
+  action:
+    channel: marketing_email
+    content_theme: guideline_update
+    timing: this_week
+  priority: 65
+  reason_template: 'Guideline update {guideline_update_days_ago} days ago: send the summary'
+  parameters: {}
+  owner: medical
+  notes: ''
+- id: R086
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets:
+  - UK
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: formulary_status_changed == 'added' and days_since_formulary_change <= 30
+  action:
+    channel: rep_visit
+    content_theme: access
+    timing: this_week
+  priority: 80
+  reason_template: 'Added to local formulary {days_since_formulary_change} days ago: visit all tier A and B in the area'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R087
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets:
+  - DE
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: quota_pressure_flag == True
+  action:
+    channel: rep_email
+    content_theme: economic_evidence
+    timing: this_week
+  priority: 55
+  reason_template: 'Prescribing budget pressure signal in region: send the cost-effectiveness asset'
+  parameters: {}
+  owner: brand
+  notes: German regional prescribing budgets
+- id: R088
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: otc_switch_signal == True
+  action:
+    channel: rep_email
+    content_theme: pharmacy_support
+    timing: this_week
+  priority: 40
+  reason_template: 'OTC switch signal in pharmacy data: pharmacist asset'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R089
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: stage == 'loyalty' and brick_volume_qoq_pct <= -{loyal_decline_pct}
+  action:
+    channel: rep_visit
+    content_theme: real_world_evidence
+    timing: this_week
+  priority: 70
+  reason_template: 'Loyal prescriber in a declining brick: real-world evidence visit'
+  parameters:
+    loyal_decline_pct: 5
+  owner: brand
+  notes: ''
+- id: R090
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: account_type == 'endoscopy_unit' and unit_procedure_volume_qoq_pct >= {proc_pct}
+  action:
+    channel: kam_brief
+    content_theme: dosing_nursing
+    timing: this_week
+  priority: 85
+  reason_template: 'Unit {unit_id} procedures up {unit_procedure_volume_qoq_pct}%: KAM brief, dosing asset for nursing'
+  parameters:
+    proc_pct: 15
+  owner: brand
+  notes: ''
+- id: R091
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: account_type == 'endoscopy_unit' and unit_competitor_share_change >= {comp_pts}
+  action:
+    channel: kam_visit
+    content_theme: cleansing_quality
+    timing: this_week
+  priority: 90
+  reason_template: Unit {unit_id} moved {unit_competitor_share_change} points of procedures to a competitor preparation
+  parameters:
+    comp_pts: 5
+  owner: brand
+  notes: ''
+- id: R092
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: account_type == 'endoscopy_unit' and days_since_kam_visit >= {kam_gap_days} and unit_tier == 'A'
+  action:
+    channel: kam_visit
+    content_theme: cleansing_quality
+    timing: this_week
+  priority: 75
+  reason_template: Tier A unit with no KAM visit in {days_since_kam_visit} days
+  parameters:
+    kam_gap_days: 45
+  owner: brand
+  notes: ''
+- id: R093
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: account_type == 'endoscopy_unit' and new_endoscopist_joined == True
+  action:
+    channel: rep_email
+    content_theme: dosing
+    timing: this_week
+  priority: 70
+  reason_template: 'New endoscopist at unit {unit_id}: dosing and preparation guide'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R094
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: account_type == 'endoscopy_unit' and unit_quality_audit_due_days <= 60
+  action:
+    channel: kam_brief
+    content_theme: cleansing_quality
+    timing: this_week
+  priority: 65
+  reason_template: 'Unit quality audit in {unit_quality_audit_due_days} days: cleansing-quality evidence'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R095
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: account_type == 'endoscopy_unit' and screening_programme_expansion == True
+  action:
+    channel: kam_brief
+    content_theme: capacity_planning
+    timing: this_week
+  priority: 70
+  reason_template: 'Screening programme expansion: capacity and preparation planning brief'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R096
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: hcp_role == 'endoscopy_nurse' and theme_received('patient_instructions') == False
+  action:
+    channel: marketing_email
+    content_theme: patient_instructions
+    timing: this_week
+  priority: 55
+  reason_template: Endoscopy nurse without the patient instruction pack
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R097
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: hcp_role == 'pharmacist_hospital' and formulary_review_days <= 90
+  action:
+    channel: kam_brief
+    content_theme: economic_evidence
+    timing: this_week
+  priority: 75
+  reason_template: 'Hospital formulary review in {formulary_review_days} days: economic evidence to pharmacy'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R098
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: account_type == 'endoscopy_unit' and inadequate_prep_rate_reported >= {prep_fail_pct}
+  action:
+    channel: kam_visit
+    content_theme: cleansing_quality
+    timing: this_week
+  priority: 80
+  reason_template: 'Reported inadequate preparation rate {inadequate_prep_rate_reported}%: quality visit'
+  parameters:
+    prep_fail_pct: 10
+  owner: brand
+  notes: ''
+- id: R099
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: specialty == 'gastroenterology' and stage == 'consideration' and webinar_attended_30d == True
+  action:
+    channel: rep_visit
+    content_theme: low_volume_prep
+    timing: this_week
+  priority: 70
+  reason_template: 'Gastroenterologist attended the preparation webinar: low-volume preparation visit'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R100
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: specialty == 'gp' and referral_volume_qoq_pct >= {ref_pct}
+  action:
+    channel: marketing_email
+    content_theme: referral_pathway
+    timing: this_week
+  priority: 45
+  reason_template: 'GP referrals up {referral_volume_qoq_pct}%: preparation pathway asset'
+  parameters:
+    ref_pct: 10
+  owner: brand
+  notes: ''
+- id: R101
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: event_type == 'endoscopy_congress' and event_attended_days_ago <= 14
+  action:
+    channel: rep_email
+    content_theme: clinical_evidence
+    timing: this_week
+  priority: 65
+  reason_template: 'Met at endoscopy congress: follow-up evidence pack'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R102
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets:
+  - UK
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: account_type == 'endoscopy_unit' and nhs_waiting_list_signal == True
+  action:
+    channel: kam_brief
+    content_theme: capacity_planning
+    timing: this_week
+  priority: 60
+  reason_template: 'Waiting-list recovery signal at unit: capacity brief'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R103
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets:
+  - DE
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: account_type == 'endoscopy_unit' and tender_window_days <= 90
+  action:
+    channel: kam_brief
+    content_theme: economic_evidence
+    timing: this_week
+  priority: 80
+  reason_template: 'Hospital tender in {tender_window_days} days: economic evidence brief'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R104
+  family: bowel_preparations
+  engine: rules
+  brand: Plenvu_Moviprep
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: hcp_role == 'unit_lead' and stage == 'loyalty' and advocacy_candidate == True
+  action:
+    channel: speaker_programme
+    content_theme: peer_experience
+    timing: this_week
+  priority: 50
+  reason_template: 'Unit lead loyal and willing: invite as speaker'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R105
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: specialty == 'hepatology' and prescribed_last_qtr == True and days_since_last_touch >= {gap_days}
+  action:
+    channel: rep_email
+    content_theme: real_world_evidence
+    timing: this_week
+  priority: 75
+  reason_template: Hepatologist prescribed last quarter, no touch in {days_since_last_touch} days
+  parameters:
+    gap_days: 45
+  owner: brand
+  notes: ''
+- id: R106
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: specialty == 'hepatology' and prescribed_last_qtr == True and email_sent_14d == True and email_opened_14d ==
+    False
+  action:
+    channel: rep_visit
+    content_theme: real_world_evidence
+    timing: this_week
+  priority: 70
+  reason_template: 'Real-world evidence email not opened in 14 days: visit'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R107
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: specialty == 'hepatology' and stage == 'consideration'
+  action:
+    channel: rep_visit
+    content_theme: hepatic_encephalopathy_evidence
+    timing: this_week
+  priority: 70
+  reason_template: 'Hepatologist at consideration: clinical evidence visit'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R108
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: account_type == 'hospital' and liver_unit_flag == True and days_since_kam_visit >= 60
+  action:
+    channel: kam_brief
+    content_theme: hepatic_encephalopathy_evidence
+    timing: this_week
+  priority: 70
+  reason_template: Liver unit without KAM contact in {days_since_kam_visit} days
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R109
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: specialty == 'gp' and referral_to_hepatology_flag == True
+  action:
+    channel: marketing_email
+    content_theme: recurrence_prevention
+    timing: this_week
+  priority: 45
+  reason_template: 'GP referring to hepatology: recurrence prevention asset'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R110
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: hcp_role == 'hospital_pharmacist' and formulary_review_days <= 90
+  action:
+    channel: kam_brief
+    content_theme: economic_evidence
+    timing: this_week
+  priority: 70
+  reason_template: 'Formulary review in {formulary_review_days} days: economic evidence'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R111
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: discharge_pathway_project == True
+  action:
+    channel: kam_brief
+    content_theme: discharge_pathway
+    timing: this_week
+  priority: 60
+  reason_template: 'Hospital discharge pathway project: pathway support brief'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R112
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: event_type == 'hepatology_congress' and event_attended_days_ago <= 14
+  action:
+    channel: rep_email
+    content_theme: hepatic_encephalopathy_evidence
+    timing: this_week
+  priority: 60
+  reason_template: 'Met at hepatology congress: evidence follow-up'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R113
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: false
+  condition: readmission_signal == True
+  action:
+    channel: rep_visit
+    content_theme: recurrence_prevention
+    timing: this_week
+  priority: 75
+  reason_template: 'Readmission signal at the hospital: recurrence prevention visit'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R114
+  family: xifaxan
+  engine: rules
+  brand: Xifaxan
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: specialty == 'hepatology' and stage == 'loyalty' and advocacy_candidate == True
+  action:
+    channel: advisory_board
+    content_theme: peer_experience
+    timing: this_week
+  priority: 45
+  reason_template: 'Loyal hepatologist: advisory board invitation'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R115
+  family: rare_disease
+  engine: constraints
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: on_named_list == False
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: not on the named list for {brand}'
+  parameters: {}
+  owner: medical
+  notes: ''
+- id: R116
+  family: rare_disease
+  engine: constraints
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: msl_contact_completed == False and channel != 'msl'
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: medical science liaison contact must precede commercial touch'
+  parameters: {}
+  owner: medical
+  notes: ''
+- id: R117
+  family: rare_disease
+  engine: constraints
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: channel in ['paid_media','portal','social']
+  action:
+    channel: block
+    content_theme: none
+    timing: this_week
+  priority: 100
+  reason_template: 'Blocked: no digital promotion for rare disease brands'
+  parameters: {}
+  owner: compliance
+  notes: ''
+- id: R118
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: on_named_list == True and msl_contact_completed == False
+  action:
+    channel: msl
+    content_theme: disease_education
+    timing: this_week
+  priority: 80
+  reason_template: 'Named physician without MSL contact: schedule medical education'
+  parameters: {}
+  owner: medical
+  notes: ''
+- id: R119
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: treatment_centre_flag == True and days_since_kam_visit >= 90
+  action:
+    channel: kam_brief
+    content_theme: access
+    timing: this_week
+  priority: 70
+  reason_template: Treatment centre without KAM contact in {days_since_kam_visit} days
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R120
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: patient_identified_signal == True
+  action:
+    channel: msl
+    content_theme: diagnosis_support
+    timing: this_week
+  priority: 90
+  reason_template: 'Possible patient identified: diagnosis support from medical'
+  parameters: {}
+  owner: medical
+  notes: ''
+- id: R121
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: reimbursement_decision_days <= 60
+  action:
+    channel: kam_brief
+    content_theme: access
+    timing: this_week
+  priority: 80
+  reason_template: 'Reimbursement decision in {reimbursement_decision_days} days: access brief'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R122
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: patient_organisation_event_days <= 30
+  action:
+    channel: kam_brief
+    content_theme: patient_support
+    timing: this_week
+  priority: 50
+  reason_template: Patient organisation event in {patient_organisation_event_days} days
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R123
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: hub_enrolment_pending == True
+  action:
+    channel: kam_brief
+    content_theme: patient_support
+    timing: this_week
+  priority: 75
+  reason_template: 'Hub enrolment pending: support brief'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R124
+  family: rare_disease
+  engine: rules
+  brand: Rare_disease
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: expert_status == 'key_people' and stage == 'loyalty'
+  action:
+    channel: advisory_board
+    content_theme: peer_experience
+    timing: this_week
+  priority: 45
+  reason_template: 'Veeva Link key person loyal to the brand: advisory board'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R125
+  family: field_events_feedback
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'rep_visit'
+  action:
+    channel: capacity
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: 'Rep visit slots this week: {rep_capacity_slots_week}; fill by return per slot'
+  parameters: {}
+  owner: field
+  notes: ''
+- id: R126
+  family: field_events_feedback
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: channel == 'kam_brief'
+  action:
+    channel: capacity
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: 'KAM briefs this week: {kam_capacity_week}; fill by return per brief'
+  parameters: {}
+  owner: field
+  notes: ''
+- id: R127
+  family: field_events_feedback
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: expected_return <= 0
+  action:
+    channel: drop
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: 'Not sent: expected return {expected_return} is not positive'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R128
+  family: field_events_feedback
+  engine: optimiser
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: tier == 'A' and touches_month == 0 and week_of_month >= 3
+  action:
+    channel: floor
+    content_theme: efficacy
+    timing: this_week
+  priority: 0
+  reason_template: 'Floor: tier A physician untouched this month gets one touch'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R129
+  family: field_events_feedback
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: event_upcoming_days <= 14 and event_registered == True
+  action:
+    channel: rep_email
+    content_theme: event_reminder
+    timing: this_week
+  priority: 50
+  reason_template: 'Event in {event_upcoming_days} days: reminder from the rep'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R130
+  family: field_events_feedback
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: false
+  condition: event_attended_days_ago <= 7
+  action:
+    channel: marketing_email
+    content_theme: event_follow_up
+    timing: this_week
+  priority: 60
+  reason_template: 'Attended {event_attended_days_ago} days ago: follow-up with the materials'
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R131
+  family: field_events_feedback
+  engine: feedback
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: last_dismiss_reason == 'seen_recently'
+  action:
+    channel: adjust
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: Extend this physician's rep gap by {extend_days} days
+  parameters:
+    extend_days: 14
+  owner: brand
+  notes: ''
+- id: R132
+  family: field_events_feedback
+  engine: feedback
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: last_dismiss_reason == 'routing'
+  action:
+    channel: adjust
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: Batch with other suggestions in the same area next week
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R133
+  family: field_events_feedback
+  engine: feedback
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: false
+  condition: last_dismiss_reason == 'wrong_content'
+  action:
+    channel: adjust
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: Mark theme {content_theme} as not relevant for this physician; move to the next theme
+  parameters: {}
+  owner: brand
+  notes: ''
+- id: R134
+  family: field_events_feedback
+  engine: feedback
+  brand: all
+  markets: *id001
+  trigger_type: none
+  enabled_at_launch: true
+  condition: rule_accept_rate_30d < {min_accept_rate} and rule_triggers_30d >= 20
+  action:
+    channel: propose
+    content_theme: none
+    timing: this_week
+  priority: 0
+  reason_template: 'Rule {rule_id} accepted {rule_accept_rate_30d}% of the time: propose a threshold change at the monthly
+    review'
+  parameters:
+    min_accept_rate: 0.4
+  owner: brand
+  notes: ''

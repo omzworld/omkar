@@ -1,0 +1,148 @@
+# Standard datasets for the next best action engine.
+# Field names follow Veeva CRM and Veeva Vault naming where a Veeva object exists, so the mapping
+# from a real extract is a one-line rename. Types: string, int, float, bool, date, datetime.
+
+version: "0.1"
+grain_note: "One row per entity per period as stated. All dates ISO 8601. Market codes UK, DE."
+
+tables:
+
+  account_vod:
+    source: Veeva CRM
+    grain: one row per account (HCP or HCO)
+    primary_key: id
+    fields:
+      id: string                      # Veeva Account Id
+      name: string
+      account_type: {type: string, values: [hcp, endoscopy_unit, hospital, pharmacy, practice]}
+      hcp_type: {type: string, values: [physician, nurse, pharmacist, other]}
+      specialty_1_vod: {type: string, values: [gp, gastroenterology, hepatology, paediatrics, internal_medicine, endoscopy_nurse, pharmacist_hospital, pharmacist_retail]}
+      hcp_role: {type: string, values: [prescriber, endoscopy_nurse, pharmacist_hospital, unit_lead, medical_only_contact]}
+      primary_parent_id: string       # HCO the HCP belongs to
+      territory_id: string
+      brick_id: string
+      market: string
+      language: string
+      onekey_id: string               # OpenData / OneKey identifier
+      status: {type: string, values: [active, inactive]}
+
+  address_vod:
+    source: Veeva CRM
+    grain: one row per address
+    fields: {id: string, account_id: string, postcode: string, city: string, brick_id: string, rural_flag: bool, postal_address_verified: bool, primary: bool}
+
+  territory_vod:
+    source: Veeva CRM
+    grain: one row per territory
+    fields: {id: string, name: string, market: string, rep_user_id: string, kam_user_id: string, vacant: bool, pilot_arm: {type: string, values: [test, control, none]}}
+
+  user_vod:
+    source: Veeva CRM
+    grain: one row per field user
+    fields: {id: string, role: {type: string, values: [rep, kam, msl, manager]}, market: string, weekly_visit_slots: int, weekly_email_slots: int}
+
+  call2_vod:
+    source: Veeva CRM
+    grain: one row per completed or planned call
+    fields: {id: string, account_id: string, user_id: string, call_date: date, call_type: {type: string, values: [face_to_face, remote]}, status: {type: string, values: [planned, submitted, cancelled]}, product: string, key_message_ids: string, next_step: {type: string, values: [none, send_material, follow_up_call]}, suggestion_id: string}
+
+  sent_email_vod:
+    source: Veeva CRM Approved Email
+    grain: one row per email sent by a rep
+    fields: {id: string, account_id: string, user_id: string, email_sent_date: datetime, approved_document_id: string, status: {type: string, values: [sent, bounced]}, suggestion_id: string}
+
+  email_activity_vod:
+    source: Veeva CRM Approved Email
+    grain: one row per open or click event
+    fields: {id: string, sent_email_id: string, event_type: {type: string, values: [open, click, unsubscribe]}, event_datetime: datetime}
+
+  suggestion_vod:
+    source: Veeva CRM (written by the engine from phase one)
+    grain: one row per suggestion
+    fields: {id: string, account_id: string, user_id: string, title: string, reason: string, suggested_channel: string, approved_document_id: string, suggested_date: date, expiration_date: date, expected_return: float, status: {type: string, values: [open, accepted, dismissed, expired]}, dismiss_reason: {type: string, values: [seen_recently, routing, not_a_priority, wrong_content, other]}, rule_ids: string, run_id: string}
+
+  event_attendee_vod:
+    source: Veeva Events Management
+    grain: one row per invitee per event
+    fields: {id: string, event_id: string, account_id: string, event_type: {type: string, values: [webinar, congress, endoscopy_congress, hepatology_congress, speaker_programme, advisory_board]}, event_date: date, registered: bool, attended: bool}
+
+  hcp_master_opendata:
+    source: Veeva OpenData
+    grain: one row per HCP
+    fields: {onekey_id: string, specialty: string, practice_type: {type: string, values: [primary_care, hospital, private_clinic]}, practice_size: int, year_of_birth: int, no_promo_flag: bool, prescriber: bool, paediatric_prescriber: bool, care_home_prescriber: bool, expert_status: {type: string, values: [none, key_people]}}
+
+  hco_master_opendata:
+    source: Veeva OpenData
+    grain: one row per HCO
+    fields: {hco_id: string, name: string, hco_type: {type: string, values: [hospital, endoscopy_unit, practice, pharmacy]}, market: string, brick_id: string, liver_unit_flag: bool, unit_tier: {type: string, values: [A, B, C]}}
+
+  promomats_document:
+    source: Veeva Vault PromoMats
+    grain: one row per approved asset version
+    fields: {document_id: string, name: string, product: string, content_theme: string, journey_stage: {type: string, values: [curiosity, consideration, experience, loyalty, advocacy, any]}, channel: string, market: string, language: string, status: {type: string, values: [approved, expired, withdrawn, in_review]}, approval_date: date, expiration_date: date, variant_group: string, key_messages: {type: string, note: "Up to three approved key messages, pipe-separated; used verbatim in talk tracks"}}
+
+  consent:
+    source: Consent management (CRM or agency platform)
+    grain: one row per HCP per channel per market
+    fields: {account_id: string, market: string, channel: string, status: {type: string, values: [granted, withdrawn, none]}, consent_type: string, captured_date: date, source: string}
+
+  iqvia_brick_sales:
+    source: IQVIA sub-national sales
+    grain: one row per brick per product per month
+    fields: {brick_id: string, market: string, product: string, month: date, units: float, value: float, competitor_units: float}
+
+  procedure_volume:
+    source: Hospital statistics or KAM records
+    grain: one row per endoscopy unit per quarter
+    fields: {hco_id: string, quarter: string, colonoscopies: int, norgine_prep_share: float, inadequate_prep_rate: float}
+
+  agency_email:
+    source: Marketing automation platform export
+    grain: one row per HCP per campaign send
+    fields: {campaign_id: string, account_id: string, market: string, approved_document_id: string, sent_datetime: datetime, opened: bool, clicked: bool, unsubscribed: bool}
+
+  agency_media:
+    source: Media partner or portal report
+    grain: one row per HCP per week
+    fields: {account_id: string, market: string, week: date, impressions: int, clicks: int, portal_visits: int, portal_content_viewed: string}
+
+  iqvia_channel_preference:
+    source: IQVIA ChannelDynamics Channel Preference Survey (lookup)
+    grain: one row per market per specialty per channel
+    fields: {market: string, specialty: string, channel: string, preference_share: float, response_benchmark: float, survey_year: int}
+
+  rep_capacity:
+    source: CRM calendar or field operations
+    grain: one row per user per week
+    fields: {user_id: string, week: date, visit_slots_open: int, email_slots_open: int, on_leave: bool}
+
+  rule_draft:
+    source: Engine (written by the author module)
+    grain: one row per draft version
+    fields: {draft_id: string, author_user_id: string, created_at: datetime, source_text: string, parsed_rule: string, missing_fields: string, validation_errors: string, status: {type: string, values: [draft, tested, approved, rejected]}, quick_test_week: date, quick_test_result: string, approved_rule_id: string}
+
+  ml_candidate:
+    source: Engine (written by the discover module)
+    grain: one row per candidate per run week
+    fields: {candidate_id: string, run_week: date, account_id: string, market: string, detector: {type: string, values: [change_detection, propensity_to_move, look_alike]}, trigger_type: {type: string, values: [risk, opportunity]}, score: float, explanation: string, top_features: string, suggested_channel: string, suggested_theme: string, passed_constraints: bool, selected: bool, origin: {type: string, values: [discovery]}}
+
+  feature_snapshot:
+    source: Engine (written by the features module each run)
+    grain: one row per account per run week, same columns as the feature table
+    fields_note: "Kept for the quick impact test and for audit. Partitioned by run_week."
+
+  rep_brief:
+    source: Engine (written by the delivery module)
+    grain: one row per field user per run week
+    fields: {brief_id: string, run_week: date, user_id: string, role: {type: string, values: [rep, kam]}, territory_id: string, structured_brief: string, prose: string, word_count: int, grounding_check_passed: bool, suggestion_ids: string, model_name: string}
+
+  proposed_rule:
+    source: Engine (written by the discover module)
+    grain: one row per recurring discovery pattern
+    fields: {proposal_id: string, first_seen_week: date, weeks_seen: int, pattern: string, plain_language: string, candidate_count: int, acceptance_rate: float, status: {type: string, values: [open, accepted_as_draft, dismissed]}}
+
+derived:
+  feature_table:
+    grain: one row per account per run week
+    built_by: nba.features
+    fields_note: "Every column named in a rule condition in rules_catalogue.yaml must exist here. See feature_columns.md."

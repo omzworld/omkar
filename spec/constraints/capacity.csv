@@ -1,0 +1,10 @@
+role,unit,default_per_week,notes
+rep,rep_visit,25,"Visits per rep per week; from CRM call plan"
+rep,rep_email,40,"Approved emails per rep per week"
+rep,remote_call,10,
+kam,kam_brief,8,"Account briefs per key account manager per week"
+kam,kam_visit,6,
+agency_email,marketing_email,5000,"Per market per send window; two windows per week"
+agency_media,paid_media,20000,"Impressions per market per week"
+events,webinar,300,"Seats per webinar"
+msl,msl,6,"Medical science liaison interactions per week"

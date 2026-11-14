@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Veeva CRM Suggestion payload written by the engine",
+  "type": "object",
+  "required": ["Account_vod__c", "Title_vod__c", "Reason_vod__c", "Suggested_Date_vod__c", "Expiration_Date_vod__c", "Record_Type", "Run_Id__c", "Rule_Ids__c", "Expected_Return__c"],
+  "properties": {
+    "Account_vod__c": {"type": "string"},
+    "OwnerId": {"type": "string", "description": "Rep user id"},
+    "Record_Type": {"type": "string", "enum": ["Call", "Email", "Remote_Call"]},
+    "Title_vod__c": {"type": "string", "maxLength": 80},
+    "Reason_vod__c": {"type": "string", "maxLength": 255},
+    "Suggested_Date_vod__c": {"type": "string", "format": "date"},
+    "Expiration_Date_vod__c": {"type": "string", "format": "date"},
+    "Approved_Document_vod__c": {"type": "string"},
+    "Priority_vod__c": {"type": "integer", "minimum": 1, "maximum": 5},
+    "Expected_Return__c": {"type": "number"},
+    "Chance_Tier__c": {"type": "string", "enum": ["own_history", "segment", "benchmark"]},
+    "Rule_Ids__c": {"type": "string"},
+    "Run_Id__c": {"type": "string"}
+  }
+}

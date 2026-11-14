@@ -1,0 +1,9 @@
+segment,cap_touches_month,min_gap_days_any,min_gap_days_rep_visit,min_gap_days_email,gap_after_two_ignored_days,no_same_theme_days
+high_potential_digital_lean,5,4,21,7,21,7
+high_potential_rep_lean,6,4,14,10,21,7
+mid_potential_digital_lean,4,5,28,7,28,7
+mid_potential_rep_lean,4,5,21,10,28,7
+low_potential_any,3,7,45,14,35,7
+endoscopy_unit,4,7,30,14,30,7
+hospital_account,4,7,30,14,30,7
+pharmacy,2,14,60,21,45,7

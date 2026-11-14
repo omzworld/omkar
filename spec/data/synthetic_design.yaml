@@ -1,0 +1,92 @@
+# Synthetic data design. The generator writes every table in schemas/datasets.yaml.
+version: "0.1"
+seed: 2026
+clock:
+  history_start: 2024-11-04
+  history_end: 2026-11-02          # 24 months of multi-channel history
+  pilot_start: 2026-11-09          # week 1 of the runner
+  weeks_to_simulate: 26
+
+markets:
+  UK: {hcps: 1800, endoscopy_units: 70, hospitals: 40, pharmacies: 300, territories: 36, kams: 6, reps: 36, language: en}
+  DE: {hcps: 1200, endoscopy_units: 50, hospitals: 30, pharmacies: 200, territories: 24, kams: 4, reps: 24, language: de}
+
+brands:
+  Movicol: {audience: [gp, paediatrics, internal_medicine, pharmacist_retail], brick_products: [Movicol, competitor_peg, competitor_lactulose]}
+  Plenvu_Moviprep: {audience: [gastroenterology, endoscopy_nurse, pharmacist_hospital, unit_lead], account_signal: procedure_volume}
+  Xifaxan: {audience: [hepatology, gp], panel_signal: prescribed_last_qtr}
+
+specialty_mix:               # share of HCPs per market
+  gp: 0.55
+  gastroenterology: 0.14
+  hepatology: 0.05
+  paediatrics: 0.08
+  internal_medicine: 0.08
+  endoscopy_nurse: 0.06
+  pharmacist_hospital: 0.04
+
+tiers:                       # from brick potential index and practice size
+  A: 0.20
+  B: 0.35
+  C: 0.45
+
+# Hidden behaviour clusters drive the response simulator only. Never written to the feature table.
+clusters:
+  digital_responders:
+    share: 0.28
+    response_by_channel: {marketing_email: 0.30, rep_email: 0.26, rep_visit: 0.35, remote_call: 0.22, webinar: 0.34, paid_media: 0.06, portal: 0.12, direct_mail: 0.05}
+    consent_email_rate: 0.85
+  rep_led:
+    share: 0.36
+    response_by_channel: {marketing_email: 0.08, rep_email: 0.14, rep_visit: 0.62, remote_call: 0.30, webinar: 0.18, paid_media: 0.02, portal: 0.04, direct_mail: 0.10}
+    consent_email_rate: 0.40
+  event_driven:
+    share: 0.19
+    response_by_channel: {marketing_email: 0.18, rep_email: 0.20, rep_visit: 0.40, remote_call: 0.20, webinar: 0.55, paid_media: 0.04, portal: 0.10, direct_mail: 0.06}
+    consent_email_rate: 0.65
+  access_blocked:
+    share: 0.17
+    response_by_channel: {marketing_email: 0.20, rep_email: 0.22, rep_visit: 0.45, remote_call: 0.25, webinar: 0.20, paid_media: 0.03, portal: 0.08, direct_mail: 0.05}
+    consent_email_rate: 0.60
+    stall_stage: experience     # stays in experience until an access theme lands
+
+country_adjustment:            # multiplies response_by_channel; from IQVIA preference pattern
+  UK: {rep_visit: 0.85, marketing_email: 1.10, webinar: 1.05}
+  DE: {rep_visit: 1.15, marketing_email: 0.80, webinar: 0.95}
+
+content_effect:                # response multiplier when the theme matches the stage sequence
+  on_sequence: 1.25
+  off_sequence: 0.80
+  theme_repeat_within_30d: 0.50
+
+stage_model:
+  stages: [curiosity, consideration, experience, loyalty, advocacy]
+  move_probability_on_response: {curiosity: 0.35, consideration: 0.30, experience: 0.25, loyalty: 0.10}
+  regression_probability_per_quarter_without_touch: 0.08
+  advocacy_requires: [loyalty, event_attended]
+
+history_simulation:            # today's multi-channel plan, run for 24 months to create the baseline
+  rep_call_plan: {A: 1.5, B: 0.8, C: 0.2}            # visits per month by tier, same for all clusters
+  marketing_email_per_month_if_consent: 1.5
+  webinar_per_quarter: 1
+  paid_media_impressions_per_month: 3
+  agency_calendar_ignores_response: true
+
+brick_sales:
+  bricks_per_market: {UK: 120, DE: 80}
+  units_per_hcp_month_by_stage: {curiosity: 0, consideration: 2, experience: 8, loyalty: 18, advocacy: 22}
+  noise_sd: 0.12
+  seasonality: {Dec: 0.9, Jan: 1.05, Aug: 0.92}
+
+pilot_arms:
+  test_territories_share: 0.5
+  assignment: stratified by market and tier mix
+  control_runs: today's multi-channel plan unchanged
+
+feedback_simulation:
+  rep_accept_probability: {rep_led_cluster_rep_visit: 0.75, other: 0.55}
+  dismiss_reasons: {seen_recently: 0.38, routing: 0.27, not_a_priority: 0.15, wrong_content: 0.12, other: 0.08}
+  accept_probability_increase_per_week_with_reason: 0.01     # trust builds slowly when reasons are shown
+
+readiness_report:
+  checks: [row counts, null rates, consent coverage by market, response rates by channel and specialty, brick trends, stage distribution]

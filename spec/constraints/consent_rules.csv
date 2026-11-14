@@ -1,0 +1,21 @@
+market,channel,consent_required,consent_type,notes
+UK,marketing_email,true,email_opt_in,"PECR: soft opt-in not used for HCP promotion; explicit opt-in"
+UK,rep_email,true,email_opt_in,"Approved email from rep still requires consent"
+UK,remote_call,true,remote_call_opt_in,
+UK,paid_media,true,digital_tracking,"Tracked media only with cookie consent on partner site"
+UK,portal,true,digital_tracking,
+UK,webinar,true,email_opt_in,"Invitation by email"
+UK,rep_visit,false,,
+UK,kam_brief,false,,
+UK,direct_mail,false,,"Verified postal address required"
+UK,sample,false,,"ABPI sample rules apply"
+DE,marketing_email,true,double_opt_in,"Double opt-in required"
+DE,rep_email,true,double_opt_in,
+DE,remote_call,true,remote_call_opt_in,
+DE,paid_media,true,digital_tracking,
+DE,portal,true,digital_tracking,
+DE,webinar,true,double_opt_in,
+DE,rep_visit,false,,
+DE,kam_brief,false,,
+DE,direct_mail,false,,
+DE,sample,false,,"Samples per AMG section 47: max 2 per year per physician; confirm"

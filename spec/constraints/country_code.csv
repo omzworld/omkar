@@ -1,0 +1,21 @@
+market,channel,allowed,max_touches_per_month,notes
+UK,marketing_email,true,4,
+UK,rep_email,true,4,
+UK,rep_visit,true,2,"Call frequency per ABPI guidance on reasonable frequency"
+UK,remote_call,true,2,
+UK,webinar,true,2,
+UK,paid_media,true,6,"Impressions, not touches"
+UK,portal,true,0,"Pull channel, no cap"
+UK,direct_mail,true,1,
+UK,sample,true,0,"Governed by annual limit"
+UK,kam_brief,true,2,
+DE,marketing_email,true,3,
+DE,rep_email,true,3,
+DE,rep_visit,true,2,
+DE,remote_call,true,2,
+DE,webinar,true,2,
+DE,paid_media,true,4,
+DE,portal,true,0,
+DE,direct_mail,true,1,
+DE,sample,true,0,"Annual limit per AMG; confirm"
+DE,kam_brief,true,2,

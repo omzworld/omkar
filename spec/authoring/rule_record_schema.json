@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rule record produced by author.parse",
+  "type": "object",
+  "required": ["family", "engine", "brand", "markets", "trigger_type", "condition", "action", "reason_template", "parameters", "missing_fields", "assumptions_made", "unsupported_concepts"],
+  "properties": {
+    "family": {"type": "string"},
+    "engine": {"type": "string", "enum": ["rules", "constraints", "optimiser", "feedback"]},
+    "brand": {"type": "string"},
+    "markets": {"type": "array", "items": {"type": "string"}},
+    "trigger_type": {"type": "string", "enum": ["risk", "opportunity", "none"]},
+    "condition": {"type": "string"},
+    "action": {"type": "object", "required": ["channel", "content_theme", "timing"], "properties": {"channel": {"type": "string"}, "content_theme": {"type": "string"}, "timing": {"type": "string"}}},
+    "priority": {"type": "integer"},
+    "reason_template": {"type": "string", "maxLength": 140},
+    "parameters": {"type": "object"},
+    "missing_fields": {"type": "array", "items": {"type": "string"}},
+    "assumptions_made": {"type": "array", "items": {"type": "string"}},
+    "unsupported_concepts": {"type": "array", "items": {"type": "string"}}
+  }
+}
