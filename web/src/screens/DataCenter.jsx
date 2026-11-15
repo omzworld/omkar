@@ -20,6 +20,8 @@ export default function DataCenter({ go }) {
   const [c, setC] = useState(null);
   const [err, setErr] = useState(null);
   const [open, setOpen] = useState(null);
+  const [tab, setTab] = useState("fields");
+  const openTable = (name, which = "fields") => { setOpen(name); setTab(which); };
   const [system, setSystem] = useState("all");
   const load = () => api("/data/catalog").then(setC).catch((e) => setErr(e.message));
   useEffect(() => { load(); }, []);
@@ -76,23 +78,24 @@ export default function DataCenter({ go }) {
 
       <Lineage systems={systems} tables={tables} c={c} system={system} setSystem={setSystem} />
 
-      <Card title="Data model" subtitle="Tables and how they join. Hover a table to see its links; click it for its fields. Each line is a join tested key by key on this page load.">
-        <ModelDiagram byName={byName} relations={c.relations} onOpen={setOpen} open={open} />
+      <Card title="Data model" subtitle="Tables and how they join. Hover a table to see its links; click it for its fields and its data. Each line is a join tested key by key on this page load.">
+        <ModelDiagram byName={byName} relations={c.relations} onOpen={(n) => openTable(n)} open={open} />
       </Card>
 
       <AnimatePresence>
-        {open && byName[open] && <FieldPanel t={byName[open]} relations={c.relations} onClose={() => setOpen(null)} />}
+        {open && byName[open] && <FieldPanel t={byName[open]} relations={c.relations} onClose={() => setOpen(null)} tab={tab} setTab={setTab} />}
       </AnimatePresence>
 
       <Card title="Dataset register" subtitle={system === "all" ? "Every dataset, its source and grain, and how complete its declared fields are. Click a row for field-level detail." : `Showing ${system}. Click the system again in the lineage to show all.`}
         actions={system !== "all" && <Button kind="secondary" onClick={() => setSystem("all")}>Show all</Button>}>
         <Table rows={shown} columns={[
-          { key: "name", label: "Dataset", render: (t) => <button onClick={() => setOpen(t.name)} className="text-left"><span className="font-semibold text-[var(--ink)] hover:text-[var(--work)]">{t.name}</span><span className="block text-xs text-[var(--muted)]">{t.grain}</span></button> },
+          { key: "name", label: "Dataset", render: (t) => <button onClick={() => openTable(t.name)} className="text-left"><span className="font-semibold text-[var(--ink)] hover:text-[var(--work)]">{t.name}</span><span className="block text-xs text-[var(--muted)]">{t.grain}</span></button> },
           { key: "system", label: "Source", render: (t) => <span className="text-[var(--ink-2)]">{t.system}</span> },
           { key: "rows", label: "Rows", num: true, render: (t) => num(t.rows) },
           { key: "date_from", label: "Covers", render: (t) => t.date_from ? <span className="tabular whitespace-nowrap text-xs">{t.date_from} → {t.date_to}</span> : <span className="text-xs text-[var(--muted)]">{t.note ? "weekly" : "reference"}</span> },
           { key: "completeness_pct", label: "Fields filled", render: (t) => <Fill pct={t.completeness_pct} /> },
           { key: "status", label: "Status", render: (t) => <StatusPill s={t.status} /> },
+          { key: "view", label: "", render: (t) => t.rows > 0 && t.status !== "roadmap" ? <button onClick={() => openTable(t.name, "data")} className="whitespace-nowrap text-sm font-semibold text-[var(--work)] hover:text-[var(--ink)]">View data →</button> : null },
         ]} />
         <p className="mt-3 text-xs text-[var(--muted)]">Fields filled is the average share of rows with a value, across the declared fields. Optional fields (for example a call's next step) are blank by design.</p>
       </Card>
@@ -228,13 +231,24 @@ function ModelDiagram({ byName, relations, onOpen, open }) {
   );
 }
 
-function FieldPanel({ t, relations, onClose }) {
+function FieldPanel({ t, relations, onClose, tab, setTab }) {
   const joins = relations.filter((r) => r.child === t.name || r.parent === t.name);
   const ref = useRef(null);
-  useEffect(() => { ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [t.name]);
+  const hasData = t.rows > 0 && t.status !== "roadmap";
+  useEffect(() => { ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [t.name, tab]);
   return (
     <motion.div ref={ref} className="scroll-mt-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}>
-      <Card title={t.name} subtitle={`${t.source} · ${t.grain}${t.primary_key ? ` · key: ${t.primary_key}` : ""}`} actions={<Button kind="secondary" onClick={onClose}>Close</Button>}>
+      <Card title={t.name} subtitle={`${t.source} · ${t.grain}${t.primary_key ? ` · key: ${t.primary_key}` : ""}`}
+        actions={<div className="flex items-center gap-2">
+          <div className="flex rounded-full border border-[var(--axis)] p-0.5 text-sm">
+            {[["fields", "Fields"], ["data", "Data"]].map(([k, l]) => (
+              <button key={k} type="button" disabled={k === "data" && !hasData} onClick={() => setTab(k)}
+                className={`btn-pill px-4 py-1.5 transition disabled:opacity-40 ${tab === k ? "bg-[var(--accent)] text-white" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
+            ))}
+          </div>
+          <Button kind="secondary" onClick={onClose}>Close</Button>
+        </div>}>
+        {tab === "data" && hasData ? <DataViewer name={t.name} /> : (
         <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
           <Table maxHeight="24rem" rows={t.fields || []} empty="No declared fields." columns={[
             { key: "name", label: "Field", render: (f) => <span className="font-medium">{f.name}</span> },
@@ -256,8 +270,86 @@ function FieldPanel({ t, relations, onClose }) {
             ))}
           </div>
         </div>
+        )}
       </Card>
     </motion.div>
+  );
+}
+
+// The rows of one dataset, read straight from its file: 50 at a time, searchable, sortable by any column.
+function DataViewer({ name }) {
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState({ col: "", desc: false });
+  const [week, setWeek] = useState(null);
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const LIMIT = 50;
+  useEffect(() => { setPage(0); setSearch(""); setQ(""); setSort({ col: "", desc: false }); setWeek(null); }, [name]);
+  useEffect(() => { const t = setTimeout(() => { setQ(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);
+  useEffect(() => {
+    const p = new URLSearchParams({ limit: LIMIT, offset: page * LIMIT, search: q, sort: sort.col, desc: sort.desc });
+    if (week) p.set("week", week);
+    setBusy(true);
+    api(`/data/table/${name}?${p}`).then((r) => { setD(r); setErr(null); }).catch((e) => setErr(e.message)).finally(() => setBusy(false));
+  }, [name, page, q, sort, week]);
+
+  if (err) return <Message tone="bad">{err}</Message>;
+  if (!d) return <p className="text-sm text-[var(--muted)]">Reading {name}…</p>;
+  const from = d.total ? d.offset + 1 : 0, to = Math.min(d.offset + d.limit, d.total);
+  const cell = (v) => {
+    if (v === null || v === undefined || v === "") return <span className="text-[var(--muted)]">–</span>;
+    if (typeof v === "boolean") return v ? "true" : "false";
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) return v.endsWith("T00:00:00.000") ? v.slice(0, 10) : v.slice(0, 16).replace("T", " ");
+    if (typeof v === "number") return Number.isInteger(v) ? v : Math.round(v * 1000) / 1000;
+    return String(v);
+  };
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <input className="w-full max-w-xs rounded-full border border-[var(--axis)] bg-transparent px-4 py-2 text-sm outline-none focus:border-[var(--accent)]"
+          placeholder="Search any column, e.g. an account id" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search the rows" />
+        {d.weeks?.length > 0 && (
+          <select className="rounded-full border border-[var(--axis)] bg-[var(--raised)] px-3 py-2 text-sm" value={d.week} onChange={(e) => { setWeek(Number(e.target.value)); setPage(0); }} aria-label="Snapshot week">
+            {d.weeks.map((w) => <option key={w} value={w}>Week {w}</option>)}
+          </select>
+        )}
+        <span className="text-sm text-[var(--ink-2)]">
+          {d.total ? <>Rows <strong className="tabular text-[var(--ink)]">{num(from)}–{num(to)}</strong> of <strong className="tabular text-[var(--ink)]">{num(d.total)}</strong></> : "No rows match"}
+          {q && d.total !== d.all_rows && <span className="text-[var(--muted)]"> (filtered from {num(d.all_rows)})</span>}
+          {busy && <span className="ml-2 text-[var(--muted)]">reading…</span>}
+        </span>
+        <span className="ml-auto flex gap-2">
+          <Button kind="secondary" onClick={() => setPage((p) => p - 1)} disabled={page === 0 || busy}>← Previous</Button>
+          <Button kind="secondary" onClick={() => setPage((p) => p + 1)} disabled={to >= d.total || busy}>Next →</Button>
+        </span>
+      </div>
+      <div className="max-h-[32rem] overflow-auto rounded-xl border border-[var(--line)]">
+        <table className="w-full border-collapse text-xs">
+          <thead className="sticky top-0 z-10 bg-[var(--raised)]">
+            <tr>
+              {d.columns.map((c) => (
+                <th key={c} className="whitespace-nowrap border-b border-[var(--line)] px-3 py-2 text-left font-semibold text-[var(--ink-2)]">
+                  <button type="button" onClick={() => setSort((s) => ({ col: c, desc: s.col === c ? !s.desc : false }))} className="hover:text-[var(--ink)]">
+                    {c}{sort.col === c && <span className="ml-1 text-[var(--accent-2)]">{sort.desc ? "↓" : "↑"}</span>}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {d.rows.map((r, i) => (
+              <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--chip)]">
+                {d.columns.map((c) => <td key={c} className="tabular max-w-[18rem] truncate whitespace-nowrap px-3 py-1.5" title={String(r[c] ?? "")}>{cell(r[c])}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-xs text-[var(--muted)]">Read directly from <code>{d.file}</code> at the moment of asking. Click a column name to sort.</p>
+    </div>
   );
 }
 

@@ -27,17 +27,24 @@ def _r(rule_id, **params) -> Rule:
 
 
 def test_brick_decline_rule_with_realistic_rows():
+    def row(pct=-9.3, months=2, units=300, days=64, tier="A"):
+        return dict(brick_volume_r3m_pct=pct, brick_r3m_months_declining=months, brick_units_r3m=units,
+                    days_since_rep_visit=days, tier=tier)
     rows = pd.DataFrame([
-        dict(brick_volume_qoq_pct=-9.3, days_since_rep_visit=64, tier="A"),     # fires
-        dict(brick_volume_qoq_pct=-7.0, days_since_rep_visit=64, tier="A"),     # decline too small
-        dict(brick_volume_qoq_pct=-9.3, days_since_rep_visit=30, tier="A"),     # visited recently
-        dict(brick_volume_qoq_pct=-9.3, days_since_rep_visit=64, tier="C"),     # tier C has its own rule
-        dict(brick_volume_qoq_pct=None, days_since_rep_visit=64, tier="A"),     # no sales data: never fires
-        dict(brick_volume_qoq_pct=-9.3, days_since_rep_visit=None, tier="A"),   # never visited: unknown, no fire
+        row(),                    # fires: down 9.3% over 3 months, lower in 2 of the last 3 readings
+        row(pct=-7.0),            # decline too small
+        row(months=1),            # one bad reading only: not a trend, no fire
+        row(units=60),            # very small brick: noise, no fire
+        row(days=30),             # visited recently
+        row(tier="C"),            # tier C has its own rule
+        row(pct=None),            # no sales data: never fires
+        row(days=None),           # never visited: unknown, no fire
     ])
-    assert _r("R075").condition().evaluate(rows).tolist() == [True, False, False, False, False, False]
+    assert _r("R075").condition().evaluate(rows).tolist() == [True] + [False] * 7
     # Rule studio: lower the threshold to 6% and the second row now fires too.
-    assert _r("R075", decline_pct=6).condition().evaluate(rows).tolist() == [True, True, False, False, False, False]
+    assert _r("R075", decline_pct=6).condition().evaluate(rows).tolist() == [True, True] + [False] * 6
+    # ... or accept a single bad reading, and the third row fires.
+    assert _r("R075", confirm_months=1).condition().evaluate(rows).tolist() == [True, False, True] + [False] * 5
 
 
 def test_theme_function_rule():
@@ -49,8 +56,10 @@ def test_theme_function_rule():
 
 def test_reason_is_filled_in_plain_language():
     from nba.rules.engine import reasons
-    row = pd.DataFrame([dict(brick_id="UK-B014", brick_volume_qoq_pct=-9.3, days_since_rep_visit=64)])
-    assert reasons(_r("R075"), row) == ["Brick UK-B014 down 9.3% on prior quarter, no visit in 64 days"]
+    row = pd.DataFrame([dict(brick_id="UK-B014", brick_volume_r3m_pct=-9.3, brick_r3m_months_declining=3,
+                             days_since_rep_visit=64)])
+    assert reasons(_r("R075"), row) == ["Brick UK-B014 down 9.3% over 3 months (lower in 3 of the last 3 monthly "
+                                        "readings); no visit in 64 days"]
 
 
 # ---------------------------------------------------------------- evaluator safety and semantics

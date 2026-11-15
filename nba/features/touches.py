@@ -41,26 +41,28 @@ select t.*, d.content_theme as theme
 from t left join promomats_document d on d.document_id = t.document_id
 """
 
+# "The latest" of anything is taken with a full ordering (time, then channel, asset, outcome), so two touches
+# on the same day give the same answer on every run; DuckDB's arg_max picks any of tied rows otherwise.
 TOUCH_FEATURES = """
 with t as (select * from touch_log where ts < $as_of and channel <> 'kam_visit'),
 lastresp as (
     select account_id, max(ts) filter (where responded) as last_resp_ts,
            max(ts) filter (where responded and channel in ('rep_email', 'marketing_email')) as last_email_resp_ts,
-           arg_max(theme, ts) as last_theme
+           arg_max(theme, (ts, channel, coalesce(document_id, ''), responded)) as last_theme
     from t group by 1
 )
 select t.account_id,
     date_diff('day', max(t.ts), $as_of)                                              as days_since_last_touch,
-    arg_max(t.channel, t.ts)                                                         as last_touch_channel,
-    arg_max(t.theme, t.ts)                                                           as last_touch_theme,
-    arg_max(t.responded, t.ts)                                                       as last_touch_responded,
+    arg_max(t.channel, (t.ts, t.channel, coalesce(t.document_id, ''), t.responded, coalesce(t.next_step, '')))                                                         as last_touch_channel,
+    arg_max(t.theme, (t.ts, t.channel, coalesce(t.document_id, ''), t.responded, coalesce(t.next_step, '')))                                                           as last_touch_theme,
+    arg_max(t.responded, (t.ts, t.channel, coalesce(t.document_id, ''), t.responded, coalesce(t.next_step, '')))                                                       as last_touch_responded,
     count(*) filter (where t.ts >= $as_of - interval 30 day)                         as touches_30d,
     count(*) filter (where t.ts >= date_trunc('month', $as_of::timestamp))           as touches_month,
     count(*) filter (where t.ts > coalesce(l.last_resp_ts, '1900-01-01'))            as touches_ignored_consecutive,
     date_diff('day', max(t.ts) filter (where t.channel = 'rep_visit'), $as_of)      as days_since_rep_visit,
     count(*) filter (where t.channel = 'rep_visit' and t.ts >= $as_of - interval 90 day) as rep_visits_90d,
     date_diff('day', max(t.ts) filter (where t.channel = 'rep_visit'), $as_of)      as rep_visit_completed_days_ago,
-    arg_max(t.next_step, t.ts) filter (where t.channel = 'rep_visit')               as rep_visit_next_step,
+    arg_max(t.next_step, (t.ts, t.channel, coalesce(t.document_id, ''), t.responded, coalesce(t.next_step, ''))) filter (where t.channel = 'rep_visit')               as rep_visit_next_step,
     date_diff('day', max(t.ts) filter (where t.channel in ('rep_email', 'marketing_email')), $as_of)
                                                                                      as days_since_last_email,
     count(*) filter (where t.channel in ('rep_email', 'marketing_email') and t.ts >= $as_of - interval 30 day)
@@ -114,7 +116,7 @@ from agency_media where week < $as_of group by 1
 
 EVENTS = """
 with past as (
-    select account_id, arg_max(event_type, event_date) as event_type,
+    select account_id, arg_max(event_type, (event_date, event_type)) as event_type,
            date_diff('day', max(event_date), $as_of) as event_attended_days_ago
     from event_attendee_vod where attended and event_date < $as_of group by 1
 ),

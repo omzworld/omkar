@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { api, eur, num, pct, words } from "../api";
 import { Bars, Button, Card, Field, inputClass, Message, Stat, Table } from "../ui";
+import { BrickTrend } from "../viz.jsx";
 
 export default function WeeklyRun({ pilot }) {
   const [week, setWeek] = useState(1);
@@ -92,7 +93,7 @@ export default function WeeklyRun({ pilot }) {
             { key: "value_of_response", label: "Value", num: true, render: (s) => eur(s.value_of_response) },
             { key: "cost_of_touch", label: "Cost", num: true, render: (s) => eur(s.cost_of_touch) },
             { key: "final_return", label: "Expected return", num: true, render: (s) => eur(s.final_return) },
-            { key: "reason", label: "Why", wide: true, render: (s) => <span>{s.reason}<span className="block text-xs text-[var(--muted)]">{s.rule_ids}{s.status === "substituted" ? " · moved to a cheaper channel" : ""}</span></span> }]} />
+            { key: "reason", label: "Why", wide: true, render: (s) => <span>{s.reason}{/brick/i.test(s.reason) && <span className="mt-1 block"><BrickTrend brick={s.brick_id} until={h["run date"]} /></span>}<span className="block text-xs text-[var(--muted)]">{s.rule_ids}{s.status === "substituted" ? " · moved to a cheaper channel" : ""}</span></span> }]} />
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">

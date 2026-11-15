@@ -112,6 +112,7 @@ def _execute(sim, w, date, idx, channel, doc_ids, rng):
     repeated = np.where(has_doc, sim.last_theme_week[idx, np.maximum(theme, 0)] >= w - 4, False)
     resp = rng.random(len(idx)) < sim.beh.response_prob(idx, channel, sim.stage[idx], doc_stage, repeated)
     sim.last_touch_week[idx] = w
+    sim.last_response_week[idx[resp]] = w
     sim.last_theme_week[idx[has_doc], theme[has_doc]] = w
     on_seq = has_doc & (doc_stage == sim.stage[idx])
     sim.responded[idx[resp & on_seq]] = True

@@ -227,3 +227,57 @@ export function GapChart({ data, height = 280 }) {
     </div>
   );
 }
+
+// A small 12-month trend line of a brick's Movicol units, shown beside a reason that mentions a brick, so the
+// rep sees a trend and not a single reading. Requests from many rows are batched into one call.
+const trendCache = new Map();
+let trendQueue = { key: null, ids: new Set(), waiters: [] };
+function fetchTrend(id, until) {
+  const key = `${until || ""}|${id}`;
+  if (trendCache.has(key)) return trendCache.get(key);
+  const p = new Promise((resolve) => {
+    if (trendQueue.key !== (until || "") && trendQueue.ids.size) flushTrends();
+    trendQueue.key = until || "";
+    trendQueue.ids.add(id);
+    trendQueue.waiters.push({ id, resolve });
+    clearTimeout(trendQueue.timer);
+    trendQueue.timer = setTimeout(flushTrends, 40);
+  });
+  trendCache.set(key, p);
+  return p;
+}
+function flushTrends() {
+  const q = trendQueue;
+  trendQueue = { key: null, ids: new Set(), waiters: [] };
+  if (!q.ids.size) return;
+  const params = new URLSearchParams({ ids: [...q.ids].join(",") });
+  if (q.key) params.set("until", q.key);
+  fetch(`/api/bricks/trend?${params}`).then((r) => r.json()).catch(() => ({}))
+    .then((data) => q.waiters.forEach((w) => w.resolve(data[w.id] || [])));
+}
+
+export function BrickTrend({ brick, until, width = 96, height = 26 }) {
+  const [pts, setPts] = useState(null);
+  useEffect(() => { let on = true; if (brick) fetchTrend(brick, until).then((d) => on && setPts(d)); return () => { on = false; }; }, [brick, until]);
+  if (!brick || !pts || pts.length < 4) return null;
+  const v = pts.map((p) => p.units);
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  const x = (i) => 2 + (i * (width - 4)) / (v.length - 1);
+  const y = (u) => 3 + (height - 6) * (1 - (u - lo) / span);
+  // Rolling 3-month line on top of the monthly points: the trend the rules act on.
+  const roll = v.map((_, i) => (i >= 2 ? (v[i] + v[i - 1] + v[i - 2]) / 3 : null));
+  const last3 = roll[roll.length - 1], prev3 = roll[roll.length - 4];
+  const down = last3 != null && prev3 != null && last3 < prev3;
+  const color = down ? "var(--bad)" : "var(--good)";
+  const rollPath = roll.map((r, i) => (r == null ? null : `${x(i)},${y(r)}`)).filter(Boolean).join(" ");
+  return (
+    <span className="inline-flex items-center gap-1.5 align-middle" title={`Brick ${brick}, Movicol units per month: ${pts.map((p) => `${p.month} ${p.units}`).join(", ")}. Line: 3-month average.`}>
+      <svg width={width} height={height} aria-label={`12-month trend for brick ${brick}`}>
+        <polyline points={v.map((u, i) => `${x(i)},${y(u)}`).join(" ")} fill="none" stroke="var(--axis)" strokeWidth="1" />
+        {v.map((u, i) => <circle key={i} cx={x(i)} cy={y(u)} r="1.2" fill="var(--muted)" />)}
+        <polyline points={rollPath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="text-[10px] text-[var(--muted)]">12 mo</span>
+    </span>
+  );
+}

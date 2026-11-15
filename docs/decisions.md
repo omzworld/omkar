@@ -177,3 +177,42 @@ Open items to settle before the steps that need them:
 - Data control center (`nba/datacatalog.py`, `/api/data/catalog`): every dataset in `datasets.yaml` checked live
   against its Parquet file (rows, fields present, fill rate, date range), 23 joins tested key by key, and the feature
   table's coverage including the signals that have no source yet. The screen says plainly that the values are synthetic.
+
+## Rolling brick trends instead of a single quarter-on-quarter reading (15 Nov 2026)
+
+- Brick sales are monthly (IQVIA), and the brick rules compared the last complete quarter with the quarter before.
+  One bad quarter was enough to raise a trigger, the value jumped at quarter boundaries, and consecutive quarters mix
+  in seasonality. In the synthetic data 76% of bricks flagged "down 8% or more" recovered the next quarter.
+- New feature columns (in `feature_columns.md`, built in `nba/features/market.py`): `brick_volume_r3m_pct` (last 3
+  complete months against the 3 before, recomputed every month), `brick_volume_r3m_yoy_pct` (against the same 3
+  months a year earlier), `brick_units_r3m`, `brick_r3m_months_declining` / `_growing` (how many of the last 3
+  monthly readings agree), `brick_competitor_share_r3m_change` and `brick_share_months_rising`.
+- R075, R076, R077, R078 and the loyal-prescriber decline rule now need the rolling change past their threshold,
+  confirmed in at least `confirm_months` (2) of the last 3 readings, in a brick selling at least `min_units` (100)
+  units in 3 months. Both are rule parameters the rule studio can change. The quarter-on-quarter columns are still
+  built (talk tracks and readiness no longer use them). Changed in `gen_rules.py`, catalogue regenerated.
+- Year-on-year is not a condition: the synthetic market grows about 11% a year, so requiring "below last year" left
+  3 bricks of 198 flagged at week 8. It is shown instead, as a 12-month trend line beside any reason about a brick
+  (`/api/bricks/trend`), with the 3-month average drawn over the monthly points.
+- Bricks flagged "down 8%" at week 8: 37 under the quarterly reading, 13 under the rolling, confirmed rule.
+- Fixed in passing: the talk track's "most common dismiss reason" used DuckDB `mode()`, which picks any of tied
+  values, so a replay could differ. Ties are now broken alphabetically.
+
+## Competitor campaigns in the simulator, so brick declines mean something (15 Nov 2026)
+
+- Simulated brick sales came only from physicians' journey stages plus random monthly noise, so a brick decline
+  carried no information about which physicians to reach; no brick rule could earn lift, and switching to rolling
+  trends moved the 26-week lift from +1.9 to 0.0 points without either version being right.
+- Added competitor campaigns (`competitor_pushes` in `synthetic_design.yaml`, `nba/synth/behaviour.py`): each month
+  each brick has a 3% chance that a campaign starts, lasting 4 to 8 months with a quiet spell after. While it runs,
+  a physician in the brick with no response to Norgine (visit, email or event) in the last 8 weeks slips back one
+  journey stage with a 25% chance a month. Fewer units follow, and the competitor takes them (its sales fill the
+  brick's slowly growing total). A recent response protects; a touch alone does not. The schedule is hidden
+  (`data/hidden/competitor_push.parquet`); the engine never reads it.
+- Calibration: at 10% a month campaign bricks averaged -1.1% over 3 months against +3.3% otherwise, too faint to
+  matter; at 25% they average -6.8% against +3.1%. Over the history, 33% of the rolling, confirmed decline flags
+  fall in a live campaign, against 23% of the quarterly flags, from fewer flags (458 against 690); chance is 11%.
+  Rolling flags catch about a third of campaign months. The rule still misses some and raises some false alarms.
+- Reproducibility fix found by the replay test: "the latest touch" (channel, theme, response, next step), the latest
+  event and the latest dismiss reason used DuckDB `arg_max` on the date alone, which picks any of tied rows when two
+  happen on the same day. They now order by date, then channel, asset and outcome. Five replays are identical.

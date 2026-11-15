@@ -4,15 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { api, num, words } from "../api";
 import { Badge, Button, Card, Field, inputClass, Message, Table } from "../ui";
+import { BrickTrend } from "../viz.jsx";
 
 const EMPTY = { brand: "", markets: [], trigger_type: "opportunity", family: "", channel: "", content_theme: "", timing: "this_week",
   priority: 60, reason_template: "", note: "", conditions: [{ column: "", kind: "", op: "", value: "" }] };
 
 // The brief's own example (demo scene 7), with the market left blank on purpose.
 const EXAMPLE = { ...EMPTY, brand: "Movicol", trigger_type: "risk", channel: "rep_visit", content_theme: "efficacy", priority: 70,
-  reason_template: "Brick {brick_id} down {brick_volume_qoq_pct}% and no rep visit in {days_since_rep_visit} days",
+  reason_template: "Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months and no rep visit in {days_since_rep_visit} days",
   conditions: [
-    { column: "brick_volume_qoq_pct", kind: "number", op: "<=", value: -8 },
+    { column: "brick_volume_r3m_pct", kind: "number", op: "<=", value: -8 },
+    { column: "brick_r3m_months_declining", kind: "number", op: ">=", value: 2 },
     { column: "days_since_rep_visit", kind: "number", op: ">=", value: 60 },
     { column: "specialty", kind: "text", op: "==", value: "gp" }] };
 
@@ -140,7 +142,7 @@ export default function NewRule({ onClose, onApproved }) {
 
         <Step n="4" title="Why: the reason the rep sees" last>
           <textarea rows={2} className={ring(inputClass, isMissing("the reason the rep sees"))} value={form.reason_template} maxLength={160}
-            onChange={(e) => set("reason_template", e.target.value)} placeholder="e.g. Brick {brick_id} down {brick_volume_qoq_pct}% and no rep visit in {days_since_rep_visit} days" />
+            onChange={(e) => set("reason_template", e.target.value)} placeholder="e.g. Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months and no rep visit in {days_since_rep_visit} days" />
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
             <span className={form.reason_template.length > 140 ? "text-[var(--bad)]" : ""}>{form.reason_template.length}/140.</span> Insert a value:
             {[...new Set(form.conditions.map((c) => c.column).filter((c) => c && c !== "__theme__")), "brick_id", "territory_id"].map((c) => (
@@ -185,7 +187,7 @@ export default function NewRule({ onClose, onApproved }) {
               </div>
               <Table maxHeight="18rem" rows={t.sample} empty="No one matches this week." columns={[
                 { key: "name", label: "Physician or account" }, { key: "territory_id", label: "Territory" },
-                { key: "pilot_arm", label: "Pilot group", render: (r) => words(r.pilot_arm) }, { key: "reason", label: "Reason the rep sees", wide: true }]} />
+                { key: "pilot_arm", label: "Pilot group", render: (r) => words(r.pilot_arm) }, { key: "reason", label: "Reason the rep sees", wide: true, render: (r) => <span>{r.reason}{/brick/i.test(r.reason) && <span className="mt-1 block"><BrickTrend brick={r.brick_id} until={t.run_date} /></span>}</span> }]} />
               <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--line)] bg-[var(--chip)] p-4">
                 <div className="min-w-[16rem] flex-1"><Field label="Approval note (who and why)"><input className={inputClass} value={form.note} onChange={(e) => set("note", e.target.value)} placeholder="e.g. Approved by the Movicol brand lead, 14 Nov" /></Field></div>
                 <Button onClick={approve} disabled={busy}>Approve as {opt.next_id}</Button>

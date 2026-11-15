@@ -1298,14 +1298,18 @@ rules:
   markets: *id001
   trigger_type: risk
   enabled_at_launch: true
-  condition: brick_volume_qoq_pct <= -{decline_pct} and days_since_rep_visit >= 60 and tier in ['A','B']
+  condition: brick_volume_r3m_pct <= -{decline_pct} and brick_r3m_months_declining >= {confirm_months} and brick_units_r3m
+    >= {min_units} and days_since_rep_visit >= 60 and tier in ['A','B']
   action:
     channel: rep_visit
     content_theme: efficacy
     timing: this_week
   priority: 85
-  reason_template: Brick {brick_id} down {brick_volume_qoq_pct}% on prior quarter, no visit in {days_since_rep_visit} days
+  reason_template: Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months (lower in {brick_r3m_months_declining} of the
+    last 3 monthly readings); no visit in {days_since_rep_visit} days
   parameters:
+    confirm_months: 2
+    min_units: 100
     decline_pct: 8
   owner: brand
   notes: ''
@@ -1316,15 +1320,19 @@ rules:
   markets: *id001
   trigger_type: risk
   enabled_at_launch: true
-  condition: brick_volume_qoq_pct <= -{decline_pct} and tier == 'C'
+  condition: brick_volume_r3m_pct <= -{decline_pct} and brick_r3m_months_declining >= {confirm_months} and brick_units_r3m
+    >= {min_units} and tier == 'C'
   action:
     channel: marketing_email
     content_theme: efficacy
     timing: this_week
   priority: 55
-  reason_template: 'Brick {brick_id} down {brick_volume_qoq_pct}%: efficacy email to tier C'
+  reason_template: 'Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months, a sustained decline: efficacy email to tier
+    C'
   parameters:
     decline_pct: 8
+    confirm_months: 2
+    min_units: 100
   owner: brand
   notes: ''
 - id: R077
@@ -1334,15 +1342,19 @@ rules:
   markets: *id001
   trigger_type: opportunity
   enabled_at_launch: true
-  condition: brick_volume_qoq_pct >= {growth_pct} and stage == 'consideration'
+  condition: brick_volume_r3m_pct >= {growth_pct} and brick_r3m_months_growing >= {confirm_months} and brick_units_r3m >=
+    {min_units} and stage == 'consideration'
   action:
     channel: rep_email
     content_theme: patient_case
     timing: this_week
   priority: 60
-  reason_template: 'Brick growing {brick_volume_qoq_pct}%: convert considerers with the patient case'
+  reason_template: 'Brick growing {brick_volume_r3m_pct}% over 3 months (up in {brick_r3m_months_growing} of the last 3 readings):
+    convert considerers with the patient case'
   parameters:
     growth_pct: 10
+    confirm_months: 2
+    min_units: 100
   owner: brand
   notes: ''
 - id: R078
@@ -1352,15 +1364,19 @@ rules:
   markets: *id001
   trigger_type: opportunity
   enabled_at_launch: false
-  condition: brick_competitor_share_change >= {comp_pct}
+  condition: brick_competitor_share_r3m_change >= {comp_pct} and brick_share_months_rising >= {confirm_months} and brick_units_r3m
+    >= {min_units}
   action:
     channel: rep_visit
     content_theme: efficacy
     timing: this_week
   priority: 70
-  reason_template: 'Competitor share in brick up {brick_competitor_share_change} points: efficacy visit'
+  reason_template: 'Competitor share in brick up {brick_competitor_share_r3m_change} points over 3 months (rising in {brick_share_months_rising}
+    of the last 3 readings): efficacy visit'
   parameters:
     comp_pct: 3
+    confirm_months: 2
+    min_units: 100
   owner: brand
   notes: ''
 - id: R079
@@ -1543,15 +1559,18 @@ rules:
   markets: *id001
   trigger_type: risk
   enabled_at_launch: false
-  condition: stage == 'loyalty' and brick_volume_qoq_pct <= -{loyal_decline_pct}
+  condition: stage == 'loyalty' and brick_volume_r3m_pct <= -{loyal_decline_pct} and brick_r3m_months_declining >= {confirm_months}
+    and brick_units_r3m >= {min_units}
   action:
     channel: rep_visit
     content_theme: real_world_evidence
     timing: this_week
   priority: 70
-  reason_template: 'Loyal prescriber in a declining brick: real-world evidence visit'
+  reason_template: 'Loyal prescriber in a brick down {brick_volume_r3m_pct}% over 3 months: real-world evidence visit'
   parameters:
     loyal_decline_pct: 5
+    confirm_months: 2
+    min_units: 100
   owner: brand
   notes: ''
 - id: R090

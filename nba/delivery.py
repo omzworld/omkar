@@ -108,9 +108,14 @@ def _last_week(con, rep: str, territory: str, start, end) -> dict:
         return con.execute(sql, used).fetchone()
     visits = q("""select count(*) from call2_vod where user_id = $rep and status = 'submitted'
                             and call_type = 'face_to_face' and call_date >= $s and call_date < $e""")[0]
+    # Most common dismiss reason, ties broken alphabetically so a replay with the same seed gives the same brief
+    # (DuckDB's mode() picks any of the tied values).
     sug = q("""select count(*) filter (where status = 'accepted'), count(*) filter (where status = 'dismissed'),
-                                mode(dismiss_reason) from suggestion_vod
-                         where user_id = $rep and suggested_date >= $s and suggested_date < $e""")
+                       (select dismiss_reason from suggestion_vod
+                         where user_id = $rep and suggested_date >= $s and suggested_date < $e and dismiss_reason is not null
+                         group by 1 order by count(*) desc, dismiss_reason limit 1)
+                  from suggestion_vod
+                 where user_id = $rep and suggested_date >= $s and suggested_date < $e""")
     emails = q("""select count(*), count(*) filter (where exists (select 1 from email_activity_vod a
                                  where a.sent_email_id = s.id and a.event_type = 'open'))
                             from sent_email_vod s where user_id = $rep and email_sent_date >= $s
@@ -147,8 +152,10 @@ def structured_brief(r: WeekResult, rep: str, territory: pd.Series, sug: pd.Data
         "territory": {"id": territory.id, "name": territory["name"], "market": territory.market, "week": r.week,
                       "week_start": f"{r.feats.as_of:%Y-%m-%d}"},
         "last_week": _last_week(con, rep, territory.id, r.feats.as_of - pd.Timedelta(days=7), r.feats.as_of),
-        "bricks": [{"brick_id": b.brick_id, "change_pct": None if pd.isna(b.brick_volume_qoq_pct)
-                    else float(b.brick_volume_qoq_pct)} for _, b in bricks.iterrows()],
+        "bricks": [{"brick_id": b.brick_id, "change_pct": None if pd.isna(b.brick_volume_r3m_pct)
+                    else float(b.brick_volume_r3m_pct),
+                    "months_declining": int(b.brick_r3m_months_declining), "months_growing": int(b.brick_r3m_months_growing)}
+                   for _, b in bricks.iterrows()],
         "suggestions": items,
         "candidates_in_territory": int(d.hcp_id.nunique()),
         "held": {"cadence": int(reasons.str.contains("Delayed").sum()),
@@ -173,10 +180,12 @@ def template_prose(b: dict) -> str:
         if br["change_pct"] is None:
             continue
         c = br["change_pct"]
-        trend.append(f"brick {br['brick_id']} is {'down' if c < 0 else 'up'} {abs(c):g}%" if abs(c) >= 1
+        steady = br.get("months_declining", 0) >= 2 if c < 0 else br.get("months_growing", 0) >= 2
+        trend.append(f"brick {br['brick_id']} is {'down' if c < 0 else 'up'} {abs(c):g}%"
+                     + (" and the trend is steady" if steady else ", a one-off for now") if abs(c) >= 1
                      else f"brick {br['brick_id']} is flat")
     if trend:
-        lines.append("On the prior quarter, " + ", ".join(trend) + ".")
+        lines.append("Over the last 3 months against the 3 before, " + ", ".join(trend) + ".")
     lines += ["", "This week's suggestions."]
     if not b["suggestions"]:
         lines.append("No new suggestions this week; follow your call plan.")

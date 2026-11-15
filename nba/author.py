@@ -254,9 +254,10 @@ def quick_test(form: dict, week: int | None = None) -> dict:
         "by_market": rows.market.value_counts().to_dict(), "territories": int(rows.territory_id.nunique()),
         "reps": int(reps.nunique()), "verdicts": {k: int(n) for k, n in verdicts.items()},
         "by_constraint": by_constraint, "would_send_test_arm": sent, "overlap_other_rules": overlap,
-        "sample": [{"hcp_id": h, "name": names.get(h, ""), "market": m, "territory_id": tr, "pilot_arm": a, "reason": rs}
-                   for h, m, tr, a, rs in zip(sample.hcp_id, sample.market, sample.territory_id, sample.pilot_arm,
-                                              engine.reasons(rule, sample))],
+        "sample": [{"hcp_id": h, "name": names.get(h, ""), "market": m, "territory_id": tr, "brick_id": bk,
+                    "pilot_arm": a, "reason": rs}
+                   for h, m, tr, bk, a, rs in zip(sample.hcp_id, sample.market, sample.territory_id, sample.brick_id,
+                                                  sample.pilot_arm, engine.reasons(rule, sample))],
         "note": f"Tested on the week of {feats.as_of:%d %b %Y}. A rule that depends on a monthly signal may show "
                 "few matches in a quiet week."}}
 

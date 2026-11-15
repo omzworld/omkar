@@ -58,13 +58,13 @@ export default function Readiness() {
           <Bars data={[...r.response_by_channel].sort((a, b) => b.response_pct - a.response_pct).map((d) => ({ ...d, channel: words(d.channel) }))}
             label="channel" value="response_pct" format={(v) => num(v, 1)} unit="%" />
         </Card>
-        <Card title="Brick sales trend" subtitle="Movicol units in each sales area (brick), last complete quarter against the quarter before.">
+        <Card title="Brick sales trend" subtitle="Movicol units in each sales area (brick): the last 3 complete months against the 3 before. A brick counts as down or up only when 2 of its last 3 monthly readings agree and it sells at least 100 units in 3 months.">
           <Table rows={r.bricks} columns={[
             { key: "market", label: "Market" },
             { key: "bricks", label: "Bricks", num: true },
             { key: "median_change_pct", label: "Typical change", num: true, render: (b) => pct(b.median_change_pct) },
-            { key: "bricks_down_8pct_or_more", label: "Down 8% or more", num: true },
-            { key: "bricks_up_10pct_or_more", label: "Up 10% or more", num: true },
+            { key: "bricks_down_8pct_or_more", label: "Steadily down 8%+", num: true },
+            { key: "bricks_up_10pct_or_more", label: "Steadily up 10%+", num: true },
           ]} />
         </Card>
       </div>

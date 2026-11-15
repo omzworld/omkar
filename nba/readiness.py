@@ -59,27 +59,29 @@ from touches group by all order by specialty, channel
 """
 
 SQL_BRICKS = """
-with q as (
-    select market, brick_id, date_trunc('quarter', month) as quarter, sum(units) as units
-    from iqvia_brick_sales where product = 'Movicol' group by all
+with m as (select market, brick_id, month, units from iqvia_brick_sales where product = 'Movicol'),
+r as (
+    select market, brick_id, month,
+           sum(units) over (partition by brick_id order by month rows between 2 preceding and current row) as r3,
+           sum(units) over (partition by brick_id order by month rows between 5 preceding and 3 preceding) as p3,
+           count(*) over (partition by brick_id order by month) as n
+    from m
 ),
-last2 as (
-    select *, rank() over (partition by market order by quarter desc) as r
-    from (select distinct market, quarter from q) qq
+readings as (
+    select market, brick_id, r3, 100 * (r3 / nullif(p3, 0) - 1) as pct,
+           row_number() over (partition by brick_id order by month desc) as k
+    from r where n >= 6
 ),
-chg as (
-    select cur.market, cur.brick_id,
-           100 * (cur.units / nullif(prev.units, 0) - 1) as qoq_pct
-    from q cur
-    join last2 lc on lc.market = cur.market and lc.quarter = cur.quarter and lc.r = 2   -- last complete quarter
-    join last2 lp on lp.market = cur.market and lp.r = 3
-    join q prev on prev.market = cur.market and prev.brick_id = cur.brick_id and prev.quarter = lp.quarter
+b as (
+    select market, brick_id, max(pct) filter (where k = 1) as pct, max(r3) filter (where k = 1) as r3,
+           count(*) filter (where k <= 3 and pct < 0) as down, count(*) filter (where k <= 3 and pct > 0) as up
+    from readings group by all
 )
 select market, count(*) as bricks,
-       round(median(qoq_pct), 1)                       as median_change_pct,
-       count(*) filter (where qoq_pct <= -8)           as bricks_down_8pct_or_more,
-       count(*) filter (where qoq_pct >= 10)           as bricks_up_10pct_or_more
-from chg group by market order by market
+       round(median(pct), 1)                                                         as median_change_pct,
+       count(*) filter (where pct <= -8 and down >= 2 and r3 >= 100)                 as bricks_down_8pct_or_more,
+       count(*) filter (where pct >= 10 and up >= 2 and r3 >= 100)                   as bricks_up_10pct_or_more
+from b group by market order by market
 """
 
 SQL_MONTHLY = """

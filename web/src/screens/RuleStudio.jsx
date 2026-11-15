@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, num, words } from "../api";
 import { Badge, Button, Card, Field, inputClass, Message, Table } from "../ui";
 import NewRule from "./NewRule.jsx";
+import { BrickTrend } from "../viz.jsx";
 
 export default function RuleStudio() {
   const [rules, setRules] = useState([]);
@@ -133,7 +134,7 @@ export default function RuleStudio() {
                 <h3 className="mb-2 mt-5 text-sm font-medium">Added ({preview.added.length})</h3>
                 <Table maxHeight="20rem" rows={preview.added} empty="No one is added." columns={[
                   { key: "name", label: "Physician" }, { key: "hcp_id", label: "Id" }, { key: "territory_id", label: "Territory" },
-                  { key: "pilot_arm", label: "Pilot group", render: (r) => words(r.pilot_arm) }, { key: "reason", label: "Reason", wide: true }]} />
+                  { key: "pilot_arm", label: "Pilot group", render: (r) => words(r.pilot_arm) }, { key: "reason", label: "Reason", wide: true, render: (r) => <span>{r.reason}{/brick/i.test(r.reason) && <span className="mt-1 block"><BrickTrend brick={r.brick_id} until={preview.run_date} /></span>}</span> }]} />
                 {preview.removed.length > 0 && (<>
                   <h3 className="mb-2 mt-5 text-sm font-medium">Removed ({preview.removed.length})</h3>
                   <Table maxHeight="16rem" rows={preview.removed} columns={[

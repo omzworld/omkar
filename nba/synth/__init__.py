@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from nba import data, schema, spec
-from nba.synth import content, entities, sales
+from nba.synth import behaviour, content, entities, sales
 from nba.synth.history import History
 
 ENGINE_TABLES = ["suggestion_vod", "rule_draft", "ml_candidate", "rep_brief", "proposed_rule"]
@@ -81,6 +81,11 @@ def generate(seed: int | None = None, scale: float = 1.0, data_dir: Path | None 
 
     log("Building physicians, organisations, territories and consent ...")
     world = entities.build(rng, design, scale)
+    # Competitor campaigns over the history and the pilot (hidden from the engine), from their own random stream.
+    clock = design["clock"]
+    n_weeks = (pd.Timestamp(clock["history_end"]) - pd.Timestamp(clock["history_start"])).days // 7 \
+        + clock["weeks_to_simulate"] + 8
+    world["pushes"] = behaviour.competitor_pushes(np.random.default_rng([seed, 101]), design, world["bricks"], n_weeks)
     docs = content.documents(rng, design)
     log("Simulating 24 months of today's multi-channel plan ...")
     sim = History(rng, design, world, docs)
@@ -117,6 +122,7 @@ def generate(seed: int | None = None, scale: float = 1.0, data_dir: Path | None 
         data.write_table(name, df, data_dir)
     # Simulator-only truth. The engine never reads this folder.
     data.write_hidden("hcp_cluster", world["hcp"][["id", "cluster"]].rename(columns={"id": "account_id"}), data_dir)
+    data.write_hidden("competitor_push", world["pushes"], data_dir)
     # The simulator's state at the end of the history, so the pilot (nba.feedback) carries on from it.
     sim.clear_rows()
     root = Path(data_dir) if data_dir else spec.data_dir()

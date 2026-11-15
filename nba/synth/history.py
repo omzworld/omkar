@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from nba.synth.behaviour import ANY_STAGE, STAGE_INDEX, Behaviour
+from nba.synth.behaviour import ANY_STAGE, STAGE_INDEX, Behaviour, push_slip_probability
 
 CHANNELS = ["marketing_email", "rep_email", "rep_visit", "remote_call", "webinar", "paid_media", "portal", "direct_mail"]
 WEEKS_PER_MONTH = 52 / 12
@@ -68,6 +68,7 @@ class History:
 
         self.last_theme_week = np.full((self.n, len(themes)), -999)
         self.last_touch_week = -rng.integers(0, 8, self.n)
+        self.last_response_week = np.full(self.n, -999)   # last response to Norgine: protects from competitor pushes
         self.ever_attended = np.zeros(self.n, bool)
         self.rows = {k: [] for k in ["call2_vod", "sent_email_vod", "agency_email",
                                       "agency_media", "event_attendee_vod", "hcp_stage_weekly"]}
@@ -92,6 +93,7 @@ class History:
             resp = self.rng.random(len(sel)) < p
             self.last_theme_week[sel, theme] = w
             self.last_touch_week[sel] = w
+            self.last_response_week[sel[resp]] = w
             on_seq = self.doc_stage[docs] == self.stage[sel]
             self.responded[sel[resp & on_seq]] = True   # only stage-appropriate content moves the journey
             self.access_landed[sel[resp & (theme == self.access)]] = True
@@ -192,6 +194,7 @@ class History:
             registered = attended | (rng.random(len(idx)) < 0.12)
             self.responded[idx[attended]] = True
             self.ever_attended[idx[attended]] = True
+            self.last_response_week[idx[attended]] = w
             self.last_touch_week[idx] = w
             markets = h.market.to_numpy()[idx]
             self.rows["event_attendee_vod"].append(pd.DataFrame({
@@ -230,8 +233,11 @@ class History:
 
     def end_week(self, w, date):
         """Move journey stages and record them."""
+        pushes = self.world.get("pushes")
+        slip = None if pushes is None else push_slip_probability(
+            self.beh.design, pushes, self.h.brick_id.to_numpy(), w, w - self.last_response_week)
         self.stage = self.beh.move_stages(self.rng, self.stage, self.responded, self.access_landed,
-                                          self.ever_attended, w - self.last_touch_week)
+                                          self.ever_attended, w - self.last_touch_week, slip)
         self.rows["hcp_stage_weekly"].append(pd.DataFrame({"account_id": self.h.id.to_numpy(), "week": date,
                                                            "stage": self.stage}))
 

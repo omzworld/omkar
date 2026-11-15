@@ -138,6 +138,43 @@ def _feature_table(d: Path) -> dict:
             "candidate_columns": len(columns.candidate_columns()), "functions": sorted(columns.functions())}
 
 
+def preview(name: str, limit: int = 50, offset: int = 0, search: str = "", sort: str = "", desc: bool = False,
+            week: int | None = None) -> dict:
+    """The rows of one declared dataset, a page at a time, with optional search and sort.
+
+    Only tables declared in datasets.yaml can be opened (the hidden behaviour files never can). The feature
+    snapshot opens the weekly snapshot of the chosen week (the latest by default)."""
+    d = spec.data_dir()
+    if name not in spec.datasets():
+        raise KeyError(f"No dataset called {name}")
+    weeks = []
+    if name == "feature_snapshot":
+        snaps = sorted((d / "snapshots").glob("features_w*.parquet"))
+        weeks = [int(p.stem[-2:]) for p in snaps]
+        if not snaps:
+            raise FileNotFoundError("No feature snapshots yet: run the pilot first")
+        w = week if week in weeks else weeks[-1]
+        f, week = d / "snapshots" / f"features_w{w:02d}.parquet", w
+    else:
+        f = _file(name, d)
+    if not f.exists():
+        raise FileNotFoundError(f"{name} has not been produced yet")
+    cols = pq.read_schema(f).names
+    limit, offset = max(1, min(int(limit), 500)), max(0, int(offset))
+    con = duckdb.connect()
+    src = f"read_parquet('{f.as_posix()}')"
+    where, params = "", []
+    if search.strip():
+        joined = ", ".join(f'coalesce("{c}"::VARCHAR, \'\')' for c in cols)
+        where = f"WHERE concat_ws('|', {joined}) ILIKE ?"
+        params.append(f"%{search.strip()}%")
+    order = f'ORDER BY "{sort}" {"DESC" if desc else "ASC"} NULLS LAST' if sort in cols else ""
+    total = con.execute(f"SELECT count(*) FROM {src} {where}", params).fetchone()[0]
+    df = con.execute(f"SELECT * FROM {src} {where} {order} LIMIT {limit} OFFSET {offset}", params).df()
+    return {"name": name, "columns": cols, "rows": df, "total": int(total), "offset": offset, "limit": limit,
+            "all_rows": pq.ParquetFile(f).metadata.num_rows, "week": week, "weeks": weeks, "file": f.relative_to(spec.ROOT).as_posix()}
+
+
 def build(max_age_s: float = 20) -> dict:
     """The whole catalogue. Cached for a few seconds, since the screen asks for it in one go."""
     if _CACHE.get("at", 0) > time.time() - max_age_s:

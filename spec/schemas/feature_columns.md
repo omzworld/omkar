@@ -33,7 +33,14 @@ event_type, event_upcoming_days, event_registered, event_attended_days_ago
 brick_volume_qoq_pct, brick_potential_index, brick_competitor_share_change, pharmacy_dispensing_qoq_pct,
 prescribed_last_qtr (Xifaxan panel or brick proxy), referral_volume_qoq_pct, referral_to_hepatology_flag,
 formulary_status_changed, days_since_formulary_change, formulary_review_days, quota_pressure_flag, otc_switch_signal,
-guideline_update_days_ago, nhs_waiting_list_signal, tender_window_days, readmission_signal, reimbursement_decision_days
+guideline_update_days_ago, nhs_waiting_list_signal, tender_window_days, readmission_signal, reimbursement_decision_days,
+brick_volume_r3m_pct (rolling trend added during the build: last 3 complete months against the 3 before),
+brick_volume_r3m_yoy_pct (last 3 complete months against the same 3 months a year earlier),
+brick_units_r3m (Movicol units in the last 3 complete months; used to leave out very small bricks),
+brick_r3m_months_declining (how many of the last 3 monthly readings of brick_volume_r3m_pct were below zero),
+brick_r3m_months_growing (how many of the last 3 monthly readings of brick_volume_r3m_pct were above zero),
+brick_competitor_share_r3m_change (competitor share of the brick in the last 3 months minus the 3 before; points),
+brick_share_months_rising (how many of the last 3 monthly readings of that share change were above zero)
 
 ## Accounts (endoscopy units, hospitals)
 unit_id, unit_tier, unit_procedure_volume_qoq_pct, unit_competitor_share_change, inadequate_prep_rate_reported,

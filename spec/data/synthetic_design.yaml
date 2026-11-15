@@ -72,6 +72,12 @@ history_simulation:            # today's multi-channel plan, run for 24 months t
   paid_media_impressions_per_month: 3
   agency_calendar_ignores_response: true
 
+competitor_pushes:             # added during the build: competitor campaigns in a brick (hidden from the engine)
+  start_probability_per_brick_month: 0.03   # chance a campaign starts in a given brick in a given month
+  duration_months: [4, 8]                   # how long a campaign lasts (uniform between the two)
+  slip_probability_per_month: 0.25          # chance per month that an unprotected physician in the brick slips back one stage
+  protection_weeks: 8                       # a response to Norgine (visit, email, event) within this many weeks protects
+
 brick_sales:
   bricks_per_market: {UK: 120, DE: 80}
   units_per_hcp_month_by_stage: {curiosity: 0, consideration: 2, experience: 8, loyalty: 18, advocacy: 22}

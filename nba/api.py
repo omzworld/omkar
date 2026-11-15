@@ -113,6 +113,7 @@ def preview_rule(rule_id: str, body: Params):
     def rows(mask):
         sel = t[mask]
         return pd.DataFrame({"hcp_id": sel.hcp_id, "name": sel.hcp_id.map(names), "market": sel.market,
+                             "brick_id": sel.brick_id,
                              "territory_id": sel.territory_id, "pilot_arm": sel.pilot_arm,
                              "reason": engine.reasons(changed if mask is not before else current, sel)})
     added, removed = after & ~before, before & ~after
@@ -178,11 +179,45 @@ def author_remove(rule_id: str):
     return {"ok": True}
 
 
+# ------------------------------------------------------------------------------------------- brick trends
+
+@app.get("/api/bricks/trend")
+def brick_trend(ids: str, until: str | None = None, months: int = 13):
+    """Monthly Movicol units and competitor share for a few bricks, for the small trend lines beside a reason."""
+    wanted = [i for i in ids.split(",") if i][:200]
+    if not wanted:
+        return {}
+    until = pd.to_datetime(until).date().isoformat() if until else None     # accepts "09 Nov 2026" or ISO dates
+    f = (_root() / "iqvia_brick_sales.parquet").as_posix()
+    import duckdb
+    con = duckdb.connect()
+    cut = "and month < date_trunc('month', ?::date)" if until else ""
+    params = [wanted] + ([until] if until else [])
+    df = con.execute(f"""
+        select brick_id, strftime(month, '%Y-%m') as month, round(units, 1) as units,
+               round(100 * competitor_units / nullif(units + competitor_units, 0), 1) as competitor_share_pct
+        from read_parquet('{f}') where product = 'Movicol' and list_contains(?, brick_id) {cut}
+        qualify row_number() over (partition by brick_id order by month desc) <= {int(months)}
+        order by brick_id, month""", params).df()
+    return {b: out(g.drop(columns="brick_id")) for b, g in df.groupby("brick_id")}
+
+
 # ------------------------------------------------------------------------------------------- data control center
 
 @app.get("/api/data/catalog")
 def data_catalog():
     return out(datacatalog.build())
+
+
+@app.get("/api/data/table/{name}")
+def data_table(name: str, limit: int = 50, offset: int = 0, search: str = "", sort: str = "", desc: bool = False,
+               week: int | None = None):
+    try:
+        return out(datacatalog.preview(name, limit, offset, search, sort, desc, week))
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
 
 
 # ------------------------------------------------------------------------------------------- scene 3: weekly run
@@ -203,7 +238,7 @@ def run_week(body: WeekRun):
     triggers = r.triggers.groupby("rule_id").agg(triggers=("hcp_id", "size"), example=("reason", "first")).reset_index()
     sent = r.sent.sort_values("final_return", ascending=False)
     names = pd.read_parquet(_root() / "account_vod.parquet", columns=["id", "name"]).set_index("id").name
-    cols = ["hcp_id", "territory_id", "final_channel", "content_theme", "asset_id", "probability_of_response",
+    cols = ["hcp_id", "territory_id", "brick_id", "final_channel", "content_theme", "asset_id", "probability_of_response",
             "chance_tier", "value_of_response", "cost_of_touch", "final_return", "rule_ids", "reason", "status",
             "not_sent_reason"]
     held = r.decisions[(r.decisions.status == "not_sent")].sort_values("expected_return", ascending=False)

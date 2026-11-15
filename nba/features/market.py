@@ -44,8 +44,44 @@ m_prev as (
 potential as (
     select brick_id, market, sum(units + competitor_units) as market_units
     from m where month >= date_trunc('month', $as_of::timestamp) - interval 12 month group by all
+),
+-- Rolling trends (added during the build): brick sales move up and down month to month, so a single
+-- quarter-on-quarter reading flags many bricks that recover. Each complete month gives one reading of
+-- "last 3 months against the 3 before" (and against the same 3 months a year earlier); rules act on the
+-- latest reading only when the last 3 readings agree.
+roll as (
+    select brick_id, month,
+           sum(units) over w0 as r3, sum(units) over wp as p3, sum(units) over wly as r3_ly,
+           sum(competitor_units) over w0 as c3, sum(competitor_units) over wp as cp3,
+           count(*) over wall as n
+    from m
+    window w0 as (partition by brick_id order by month rows between 2 preceding and current row),
+           wp as (partition by brick_id order by month rows between 5 preceding and 3 preceding),
+           wly as (partition by brick_id order by month rows between 14 preceding and 12 preceding),
+           wall as (partition by brick_id order by month rows between unbounded preceding and current row)
+),
+readings as (
+    select brick_id, r3,
+           case when n >= 6 then 100 * (r3 / nullif(p3, 0) - 1) end                                as roll_pct,
+           case when n >= 15 then 100 * (r3 / nullif(r3_ly, 0) - 1) end                            as yoy_pct,
+           case when n >= 6 then 100 * (c3 / nullif(r3 + c3, 0) - cp3 / nullif(p3 + cp3, 0)) end  as share_chg,
+           row_number() over (partition by brick_id order by month desc)                           as k
+    from roll
+),
+trend as (
+    select brick_id,
+           round(max(roll_pct) filter (where k = 1), 1)                        as brick_volume_r3m_pct,
+           round(max(yoy_pct) filter (where k = 1), 1)                         as brick_volume_r3m_yoy_pct,
+           round(max(r3) filter (where k = 1), 0)                              as brick_units_r3m,
+           count(*) filter (where k <= 3 and roll_pct < 0)                     as brick_r3m_months_declining,
+           count(*) filter (where k <= 3 and roll_pct > 0)                     as brick_r3m_months_growing,
+           round(max(share_chg) filter (where k = 1), 1)                       as brick_competitor_share_r3m_change,
+           count(*) filter (where k <= 3 and share_chg > 0)                    as brick_share_months_rising
+    from readings group by 1
 )
 select qq.brick_id,
+    t.brick_volume_r3m_pct, t.brick_volume_r3m_yoy_pct, t.brick_units_r3m, t.brick_r3m_months_declining,
+    t.brick_r3m_months_growing, t.brick_competitor_share_r3m_change, t.brick_share_months_rising,
     round(100 * (qq.units_q1 / nullif(p.units_q0, 0) - 1), 1)                                  as brick_volume_qoq_pct,
     round(100 * (qq.comp_q1 / nullif(qq.units_q1 + qq.comp_q1, 0)
                - p.comp_q0 / nullif(p.units_q0 + p.comp_q0, 0)), 1)                            as brick_competitor_share_change,
@@ -57,6 +93,7 @@ join prev p using (brick_id)
 join months using (brick_id)
 join m_prev mp using (brick_id)
 join potential pot using (brick_id)
+left join trend t using (brick_id)
 """
 
 # Brick potential at earlier dates, to spot physicians newly in a target tier.
@@ -112,7 +149,7 @@ select account_id, count(*) as unsubscribes_4w from (
 FEEDBACK = """
 select account_id,
     count(*) filter (where status = 'dismissed' and suggested_date >= $as_of - interval 30 day)        as dismissals_30d,
-    arg_max(dismiss_reason, suggested_date) filter (where status = 'dismissed')                          as last_dismiss_reason,
+    arg_max(dismiss_reason, (suggested_date, dismiss_reason)) filter (where status = 'dismissed')                          as last_dismiss_reason,
     date_diff('day', max(suggested_date) filter (where status = 'dismissed'), $as_of)                    as days_since_dismiss,
     round(avg((status = 'accepted')::int) filter (where status in ('accepted', 'dismissed')
                                                   and suggested_date >= $as_of - interval 90 day), 3)    as suggestion_accept_rate_90d
