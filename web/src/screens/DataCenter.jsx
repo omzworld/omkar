@@ -7,11 +7,11 @@ import { Badge, Button, Card, Message, Stat, Table } from "../ui";
 
 // Columns of the data model diagram, left to right, in the order data flows.
 const LANES = [
-  { key: "field", label: "Field force", tables: ["user_vod", "territory_vod", "rep_capacity"] },
+  { key: "field", label: "Field force", tables: ["user_vod", "territory_vod", "rep_capacity", "rep_plan_input"] },
   { key: "customers", label: "Customers", tables: ["hcp_master_opendata", "account_vod", "hco_master_opendata", "address_vod", "consent", "hcp_stage_weekly"] },
   { key: "activity", label: "Activity", tables: ["call2_vod", "sent_email_vod", "email_activity_vod", "event_attendee_vod", "agency_email", "agency_media"] },
   { key: "market", label: "Content and market", tables: ["promomats_document", "iqvia_brick_sales", "procedure_volume", "iqvia_channel_preference"] },
-  { key: "engine", label: "Engine outputs", tables: ["suggestion_vod", "rep_brief", "feature_snapshot", "rule_draft", "ml_candidate", "proposed_rule"] },
+  { key: "engine", label: "Engine outputs", tables: ["hcp_segment", "call_plan", "segment_budget", "suggestion_vod", "rep_brief", "feature_snapshot", "rule_draft", "ml_candidate", "proposed_rule"] },
 ];
 const LANE_COLOR = { field: "#ffd0a8", customers: "#6a6dff", activity: "#8a8dff", market: "#ff8f7a", engine: "#4fd1a1" };
 const ROADMAP = new Set(["rule_draft", "ml_candidate", "proposed_rule"]);
@@ -173,7 +173,7 @@ function ModelDiagram({ byName, relations, onOpen, open }) {
   const W = 1080, NW = 176, NH = 46, GAP = 16, TOP = 34, LANE_W = W / LANES.length;
   const pos = {};
   LANES.forEach((l, li) => l.tables.forEach((t, ti) => { pos[t] = { x: li * LANE_W + (LANE_W - NW) / 2, y: TOP + ti * (NH + GAP), lane: l.key }; }));
-  const H = TOP + 6 * (NH + GAP) + 6;
+  const H = TOP + Math.max(...LANES.map((l) => l.tables.length)) * (NH + GAP) + 6;
   const focus = hover || open;
   const linked = new Set(focus ? relations.filter((r) => r.child === focus || r.parent === focus).flatMap((r) => [r.child, r.parent]) : []);
   const path = (a, b) => {
@@ -348,7 +348,7 @@ function DataViewer({ name }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-[var(--muted)]">Read directly from <code>{d.file}</code> at the moment of asking. Click a column name to sort.</p>
+      <p className="mt-2 text-xs text-[var(--muted)]">Read directly from <code>{d.file}</code> in the data folder at the moment of asking. Click a column name to sort.</p>
     </div>
   );
 }

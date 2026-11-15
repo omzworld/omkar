@@ -5,6 +5,7 @@ data design) comes from here, so code never hard-codes a business number.
 """
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -54,4 +55,10 @@ def constraint_table(name: str) -> pd.DataFrame:
 
 
 def data_dir() -> Path:
-    return ROOT / config()["data_dir"]
+    """Where the generated tables live: config.yaml's data_dir, or the NBA_DATA_DIR environment variable when set
+    (useful to keep the frequently rewritten data outside a synced folder such as OneDrive)."""
+    override = os.environ.get("NBA_DATA_DIR")
+    if override:
+        return Path(override).expanduser()
+    p = Path(config()["data_dir"]).expanduser()       # "~/..." or an absolute path: outside the project folder
+    return p if p.is_absolute() else ROOT / p

@@ -8,7 +8,7 @@ setup:            ## create the Python environment and install the engine and th
 	uv pip install --python $(PY) -e ".[dev]"
 	cd web && npm ci
 
-synth:            ## generate the synthetic datasets into data/
+synth:            ## generate the synthetic datasets into the data folder (data_dir in config.yaml)
 	$(NBA) synth
 
 readiness:        ## print the data readiness report
@@ -24,7 +24,7 @@ serve:            ## start the engine's API and the web app
 	$(NBA) serve
 
 demo: synth web   ## fresh data, rule versions and studio-written rules, then the app; run the pilot from the Feedback and Results screens
-	rm -f data/rule_versions.json data/custom_rules.json
+	$(PY) -c "from nba import spec; [(spec.data_dir() / f).unlink(missing_ok=True) for f in ('rule_versions.json', 'custom_rules.json')]"
 	$(NBA) serve
 
 test:             ## run the automated tests

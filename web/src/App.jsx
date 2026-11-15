@@ -5,6 +5,8 @@ import { api } from "./api";
 import { Backdrop } from "./fx.jsx";
 import Home from "./screens/Home.jsx";
 import DataCenter from "./screens/DataCenter.jsx";
+import SegmentPlan from "./screens/SegmentPlan.jsx";
+import Stories from "./screens/Stories.jsx";
 import Readiness from "./screens/Readiness.jsx";
 import RuleStudio from "./screens/RuleStudio.jsx";
 import WeeklyRun from "./screens/WeeklyRun.jsx";
@@ -16,11 +18,13 @@ const SCREENS = [
   { id: "home", label: "Home", hint: "What this tool does", icon: "◈", C: Home },
   { id: "data", label: "Data control center", hint: "Sources, data model, live checks", icon: "◫", C: DataCenter },
   { id: "readiness", n: 1, label: "Data readiness", hint: "What data we have", icon: "▤", C: Readiness },
-  { id: "rules", n: 2, label: "Rule studio", hint: "Change or write a rule", icon: "⚙", C: RuleStudio },
-  { id: "week", n: 3, label: "Weekly run", hint: "Triggers, checks, ranked actions", icon: "▶", C: WeeklyRun },
-  { id: "delivery", n: 4, label: "Delivery", hint: "What reps and the agency receive", icon: "➤", C: Delivery },
-  { id: "feedback", n: 5, label: "Feedback", hint: "What reps accepted, what to change", icon: "↻", C: Feedback },
-  { id: "results", n: 6, label: "Results and return", hint: "Test versus control, break-even", icon: "◔", C: Results },
+  { id: "plan", n: 2, label: "Segment & plan", hint: "Quarterly segments and budget", icon: "▦", C: SegmentPlan },
+  { id: "rules", n: 3, label: "Rule studio", hint: "Risk and opportunity signals", icon: "⚙", C: RuleStudio },
+  { id: "week", n: 4, label: "Weekly run", hint: "The plan, and what moves", icon: "▶", C: WeeklyRun },
+  { id: "delivery", n: 5, label: "Delivery", hint: "What reps and the agency receive", icon: "➤", C: Delivery },
+  { id: "feedback", n: 6, label: "Feedback", hint: "What reps accepted, what to change", icon: "↻", C: Feedback },
+  { id: "results", n: 7, label: "Results and return", hint: "Same spend, test versus control", icon: "◔", C: Results },
+  { id: "stories", n: 8, label: "Doctor and rep view", hint: "One doctor, one rep, side by side", icon: "◉", C: Stories },
 ];
 
 export default function App() {

@@ -216,3 +216,89 @@ Open items to settle before the steps that need them:
 - Reproducibility fix found by the replay test: "the latest touch" (channel, theme, response, next step), the latest
   event and the latest dismiss reason used DuckDB `arg_max` on the date alone, which picks any of tied rows when two
   happen on the same day. They now order by date, then channel, asset and outcome. Five replays are identical.
+
+## Baseline segmentation and plan, budget-neutral weekly reallocation (15 Nov 2026)
+
+- The pilot's test territories had today's plan switched off and the engine filling reps' spare slots only, so test
+  ran on about half the touches of control. Replaced by a plan-based model (`nba/plan.py`, `nba/reallocate.py`):
+  - Each quarter (`planning.cycle_weeks` = 13): segment every active physician on potential (`nba.segments.potential`),
+    adoption (stage) and responsiveness (own 12-month response rate, shrunk to the market average with 10 touches'
+    weight). Potential bands use today's tier shares (20/35/45) with a 5-point margin before a physician moves, so a
+    move reflects a real difference (510 of 2,968 in quarter 1 against today's tiers; 23 between quarters 1 and 2).
+  - Recommend touches per segment: last year's touches per market, channel and pilot arm (each arm keeps its own
+    total, so test neither lends nor borrows budget), shifted towards the segment where the next touch is worth most
+    (value x responsiveness, 0.75 frequency decay), each segment within +/-20% of last year. Within a segment, last
+    year's pattern blended 50/50 with value; high-potential physicians visited last year keep 2 visits a quarter.
+    Channels are planned only where allowed (email consent, German double opt-in, remote consent, UK visits to
+    prescribers, no medical-only contacts). Email channels follow the consented list: newly eligible physicians
+    join at their segment's frequency for the rest of the quarter (`plan.top_up_lists`).
+  - Reps' adjustments (`rep_plan_input`, from the CRM: must see, no access, prefers digital, left the practice) apply
+    on top. New tables `hcp_segment`, `call_plan`, `segment_budget`, written each cycle.
+  - Each week the due touches (an even schedule) are the reps' plan, carried out without needing acceptance. Trigger
+    candidates may take the slot of the weakest planned touch of the same rep and channel if worth at least EUR 5
+    more; the moved touch is not rescheduled, so the total holds. At most 20% of a rep's planned touches a quarter,
+    accruing week by week. Protected: a physician already moved once on that channel this quarter, a high-potential
+    physician at the visit floor, a segment running more than 10% behind its plan. Hard blocks drop a planned
+    touch and its slot goes to the best eligible trigger; cadence delays do not hold planned touches (the plan is
+    already spaced). A rep can decline a change; the planned touch then goes ahead.
+  - The rules-to-score dial is now plan-to-reallocate: 0 follows the plan, 1 reallocates up to the cap.
+  - R135 (no touch in 14 days) switched off: the plan covers every physician. R136 added, "defend the brick":
+    sustained brick decline, a committed prescriber silent for 42 days, best channel.
+- Results now show the equal-spend check (spend per physician test vs control within 5%, and test against its own
+  planned budget) and what was reallocated by segment. The return model no longer counts a touch-cost saving.
+- First 26-week result (seed 2026): spend per physician EUR 637 test against EUR 665 control (-4.2%, within the
+  band); test spent 3.9% under its own plan (blocked touches not made up); touches per physician -7.5% (control's
+  unmanaged email programme and visits drift a few percent above last year). 9.5% of planned touches moved.
+  Brick lift -2.4 points; physicians moving up a stage 11.4% test against 14.7% control. Across the design
+  iterations the lift ranged from -3.3 to -0.9 points on the same seed, so the 26-week lift is noisy at this size;
+  the allocation favours late-stage, high-value physicians while the simulator moves early-stage physicians more
+  easily. Calibration of stage values and the reallocation's targets is the next step, not a simulator change.
+- Data folder: `NBA_DATA_DIR` overrides config.yaml's data_dir. Inside OneDrive the weekly rewrites caused a sync
+  conflict that replaced a table with an empty older copy; outside it the 26-week pilot takes 86 seconds instead
+  of more than 10 minutes. Table discovery now ignores files that are not valid table names (conflict copies).
+
+## Learned response value and stage-matched content (15 Nov 2026)
+
+- The 26-week lift was negative (-2.4 points) and test physicians moved up a stage less often than control on every
+  seed tried. Rather than change the simulated market, the engine was changed to learn from its own history what a
+  response is worth (`nba/learn.py`), using only public tables (weekly stages, touches, responses, asset journey
+  stages):
+  - The history shows a response moves a physician up a stage only when the content matches their journey stage:
+    19.9% of matched responses moved a stage, 0.6% of unmatched; 70% of responses were to unmatched content.
+  - Per stage, the engine learns the move rate for matched and unmatched content (e.g. consideration 29% vs 6%,
+    loyalty 6% vs 2%) and the weekly slip rate of physicians silent for 8 weeks against recently responsive ones.
+  - Value of a response (`optimiser.value`) = learned move chance x value of the next stage move + learned
+    protection over 8 weeks x value of the current stage, instead of assuming every response moves a physician up.
+    The quarterly plan uses the same value, so allocation and weekly moves agree.
+- R065 (consideration + patient case received -> dosing) and R070 (theme ignored twice -> next theme) switched off
+  at launch: both move content ahead of the physician's stage, which the history shows does not move physicians.
+  They stay in the catalogue; the brand team can switch them back on in the rule studio.
+- A planned touch whose asset is missing falls back to content for the physician's own stage first.
+- Slots freed by blocked planned touches go to the best remaining candidate even with a low expected return (the
+  budget is committed); swaps that displace a planned touch must still beat it.
+- Spend per physician now counts touches to the same population it divides by (active, promotable, not
+  medical-only), in both arms.
+- Talk track wording "last 3 months against the 3 before" put numbers in the prose that the grounding check could
+  not find in the brief; spelled out.
+- Evaluation across synthetic markets (seeds), same simulator: before, lift -2.4 / +2.4 / -1.1 points (seeds 2026 /
+  11 / 42, mean -0.4); after learning the response value, +3.4 / +8.9 / +4.9 (mean +5.7), with physicians moving up
+  a stage roughly twice as often in test (28-29%) as in control (13-16%). The spread across seeds is large, so the
+  pitch should quote a range, not one number.
+
+## Doctor and rep view (15 Nov 2026)
+
+- New screen 8 (`web/src/screens/Stories.jsx`, `nba/story.py`, `/api/story/*`): the pilot told through one doctor
+  and one rep, read from the public tables and run outputs; nothing is written.
+- Doctor: weekly journey stage and every touch (content, the content's journey stage, whether it matched the
+  doctor's stage at the time, response, and in test territories whether it was planned or moved in, with the
+  reason). A week's stage is recorded after that week's touches, so a touch is matched against the stage from the
+  week before. Showcase picker: test doctors who moved 1-2 stages after the engine moved a touch to them.
+- Comparisons use fixed rules, not hand-picking: the doctor's counterpart is the opposite-arm doctor with the same
+  market, quarter-1 segment, starting stage and specialty and the closest number of touches; the rep's counterpart
+  is the opposite-arm rep in the same market with the closest number of doctors. The whole peer group is shown in
+  both arms so a single pair never stands alone.
+- On the demo market (seed 2026, 26 weeks): Dr Q. Zimmer (DE-H01143, test) 14 touches, 79% stage-matched,
+  consideration -> loyalty; counterpart Dr O. Wolf (DE-H00005, control) 14 touches, 21% matched, still at
+  consideration. Peer group (23 each): 48% moved up in test against 35% in control, on 7.5 against 10.1 touches.
+  DE-REP24 (test) against DE-REP23 (control), 43 doctors each: 92 against 109 visits, 90% against 23% of visits
+  stage-matched, 33% against 21% of their doctors moved up.

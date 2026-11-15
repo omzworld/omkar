@@ -6,31 +6,35 @@ import { CountUp, Reveal, Tilt } from "../fx.jsx";
 import PlatformMap from "./PlatformMap.jsx";
 
 const DIFFERENT = [
-  { icon: "Aa", title: "Rules in plain English", text: "Marketers type a rule as a sentence, see the form it becomes, and test it on last week's data before approving it." },
-  { icon: "◎", title: "Finds what the rules missed", text: "A discovery module spots risks and opportunities no rule covers, capped at 10% of what is sent each week." },
+  { icon: "▦", title: "Starts from your plan", text: "Last year's budget and a refreshed segmentation are the baseline. The engine moves touches within them and never adds any." },
+  { icon: "Aa", title: "Rules your team owns", text: "Marketers build a rule from the data's own columns, test it on a real week and approve it, without code." },
   { icon: "☰", title: "A talk track, not a list", text: "Each rep gets a short weekly brief: their territory, three suggestions and what to say, every number checked." },
   { icon: "?", title: "Every decision explained", text: "Every action, and everything not sent, carries its reason: the rule that fired and the check that stopped it." },
 ];
 
 const TOUR = {
   readiness: "Two markets, 3,000 doctors and 24 months of history. Is the data good enough to act on?",
-  rules: "Change the Movicol brick-decline threshold and see straight away which doctors it now reaches.",
-  week: "Run one week: triggers raised, checks applied, and the ranked list with expected return.",
+  plan: "Segment every doctor, turn last year's budget into this quarter's plan by segment, and apply the reps' adjustments.",
+  rules: "The risk and opportunity signals: change a threshold or write a new rule, and see who it reaches.",
+  week: "One week of the plan: what goes ahead, what the engine moves to whom, and why. Turn the dial from plan to reallocate.",
   delivery: "What a rep, a key account manager and the agency would actually receive.",
   feedback: "Run to week 8: what reps accepted or dismissed, and the changes the engine proposes.",
-  results: "Run to week 26: test against control territories, lift, cost and break-even.",
+  results: "Run to week 26: same spend in both arms, then test against control, what moved, and the return.",
+  stories: "The same story through one doctor's journey and one rep's weeks, each next to a control counterpart and its whole peer group.",
 };
 
-const HEADLINE = ["The", "right", "next", "step", "for", "every", "doctor,", "every", "week."];
+const HEADLINE = ["Same", "budget.", "Better", "allocated.", "Every", "quarter,", "every", "week."];
 
 export default function Home({ pilot, go, screens }) {
   const [r, setR] = useState(null);
   const [week, setWeek] = useState(null);
   const [fb, setFb] = useState(null);
+  const [planData, setPlanData] = useState(null);
   const done = pilot?.completed_weeks ?? 0;
   useEffect(() => {
     api("/readiness").then(setR).catch(() => {});
     api("/week", { week: 1, dial: 1 }).then(setWeek).catch(() => {});   // a preview run: changes no saved data
+    api("/plan").then(setPlanData).catch(() => {});
   }, []);
   useEffect(() => { api("/feedback").then(setFb).catch(() => {}); }, [done]);
 
@@ -50,15 +54,17 @@ export default function Home({ pilot, go, screens }) {
         </motion.div>
         <h1 className="display mt-6 max-w-4xl text-4xl font-bold leading-[1.02] tracking-[-0.03em] md:text-6xl">
           {HEADLINE.map((w, i) => (
-            <motion.span key={i} className={`mr-[0.25em] inline-block ${i >= 5 ? "text-gradient" : ""}`}
+            <motion.span key={i} className={`mr-[0.25em] inline-block ${i === 2 || i === 3 ? "text-gradient" : ""}`}
               initial={{ opacity: 0, y: 30, rotateX: -60 }} animate={{ opacity: 1, y: 0, rotateX: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}>{w}</motion.span>
           ))}
         </h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.8 }}
           className="mt-6 max-w-2xl text-base text-[var(--ink-2)] md:text-lg">
-          The engine reads what is happening with each doctor and account, decides who needs attention and why, checks what
-          is allowed, and hands reps and the agency a ranked, explained plan. Then it learns from the response.
+          Each quarter the engine segments every doctor and turns last year's budget into a plan, segment by segment,
+          with the reps. Each week it follows that plan and moves up to a fifth of it to the doctors who need it most
+          now: a sales area slipping, a competitor push, a doctor ready for the next step. Same touches, same spend,
+          better allocated, every move explained.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="mt-8 flex flex-wrap gap-3">
           <button onClick={() => document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "start" })}
@@ -88,9 +94,9 @@ export default function Home({ pilot, go, screens }) {
       {/* The live platform map */}
       <section id="map" className="scroll-mt-6">
         <Reveal>
-          <SectionHead eyebrow="How it works" title="One week in the engine"
-            text="Six stages run every week in a loop. Click a stage to zoom in and see live numbers from the engine, or press Auto tour to let it present itself." />
-          <PlatformMap week={week} readiness={r} feedback={fb} go={go} />
+          <SectionHead eyebrow="How it works" title="From the quarter's plan to this week's touches"
+            text="The quarter's plan sets the budget; every week the engine checks it against what is happening and moves a share of it where it matters most. Click a stage to zoom in with live numbers, or press Auto tour." />
+          <PlatformMap week={week} readiness={r} feedback={fb} planData={planData} go={go} />
         </Reveal>
       </section>
 
@@ -112,7 +118,7 @@ export default function Home({ pilot, go, screens }) {
 
       {/* Demo tour and pilot status */}
       <section>
-        <Reveal><SectionHead eyebrow="The demo" title="A guided tour in six screens"
+        <Reveal><SectionHead eyebrow="The demo" title="A guided tour in eight screens"
           text="Follow them in order: each screen picks up where the last one left off." /></Reveal>
         <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
           <div className="grid gap-3 sm:grid-cols-2">

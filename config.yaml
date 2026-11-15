@@ -1,3 +1,5 @@
 # Run settings. Business inputs (rules, constraints, assumptions, data design) live in spec/.
 seed: 2026          # every number the engine produces is reproducible from this
-data_dir: data      # generated Parquet tables (not committed to Git)
+data_dir: ~/omkar-data   # generated Parquet tables, outside the project folder: the engine rewrites them every
+                         # week, and a synced folder (OneDrive) can replace them with an older copy mid-run.
+                         # A relative path (e.g. data) puts them inside the project; NBA_DATA_DIR overrides both.

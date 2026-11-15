@@ -20,7 +20,8 @@ touches_ignored_consecutive, days_since_rep_visit, rep_visits_90d, rep_visit_com
 days_since_last_email, email_sent_30d, email_opens_30d, email_clicks_30d, emails_ignored_consecutive, email_sent_14d,
 email_opened_14d, unsubscribe_30d, webinar_invites_30d, webinar_registered_30d, webinar_attended_30d, days_since_webinar,
 portal_visits_30d, portal_content_viewed, media_impressions_30d, same_theme_touches_7d, medical_inquiry_30d,
-survey_response_30d, survey_interest, days_since_kam_visit
+survey_response_30d, survey_interest, days_since_kam_visit,
+days_since_last_response (days since the physician last responded to any touch; added during the build)
 
 ## Theme functions (evaluated by the rules engine)
 theme_received(theme) -> bool, theme_received_days_ago(theme) -> int, theme_ignored_count(theme) -> int,

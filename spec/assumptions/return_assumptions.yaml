@@ -56,3 +56,15 @@ run_cost:                   # for the return model, per quarter
 pilot_gates:
   weekly: {suggestion_acceptance_min: 0.45, consent_growth_min_pct_per_month: 2, reach_min_pct: 60}
   quarterly: {brick_lift_vs_control_min_pct: 4, cost_per_engaged_hcp_max: 45}
+
+planning:                    # added during the build: the baseline cycle plan and weekly reallocation
+  cycle_weeks: 13            # one planning cycle = one quarter
+  channels: [rep_visit, remote_call, rep_email, marketing_email]   # planned and reallocated; KAM keeps its own plan
+  segment_change_cap: 0.20   # recommended touches per segment stay within +/-20% of last year's
+  frequency_decay: 0.75      # each extra touch in a quarter is worth this share of the one before
+  value_weight: 0.5          # within a segment, touches follow last year's pattern (0) or value (1), or a blend
+  floor_high_potential_visits: 2   # high-potential physicians who were visited last year keep at least this many a quarter
+  reallocation_cap: 0.20     # at most this share of a rep's planned touches in a cycle can be moved by the engine
+  segment_band: 0.10         # a segment's delivered touches stay within +/-10% of its plan (pro rata through the cycle)
+  swap_margin_eur: 5         # a swap must beat the planned touch it replaces by at least this much expected return
+  must_see_visits: 3         # rep adjustment "must see": at least this many visits a quarter

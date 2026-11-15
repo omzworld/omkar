@@ -74,12 +74,12 @@ rule(H,"optimiser","all",ALL,"none","channel == 'rep_visit' and rep_capacity_slo
 S="content_sequence"
 rule(S,"rules","all",ALL,"none","stage == 'curiosity'","as_chosen","efficacy","Curiosity stage: efficacy content first",launch=True,prio=30)
 rule(S,"rules","all",ALL,"none","stage == 'consideration' and theme_received('efficacy') == True","as_chosen","patient_case","Consideration stage after efficacy: patient case",launch=True,prio=30)
-rule(S,"rules","all",ALL,"none","stage == 'consideration' and theme_received('patient_case') == True","as_chosen","dosing","Consideration after patient case: dosing",launch=True,prio=30)
+rule(S,"rules","all",ALL,"none","stage == 'consideration' and theme_received('patient_case') == True","as_chosen","dosing","Consideration after patient case: dosing",launch=False,prio=30)
 rule(S,"rules","all",ALL,"none","stage == 'experience'","as_chosen","dosing","Experience stage: dosing and titration until repeat prescribing",launch=True,prio=30)
 rule(S,"rules","all",ALL,"none","stage == 'experience' and days_in_stage > {stall_days}","as_chosen","access","Stalled in experience for {days_in_stage} days: access and coverage content",dict(stall_days=60),launch=False,prio=45)
 rule(S,"rules","all",ALL,"none","stage == 'loyalty'","as_chosen","real_world_evidence","Loyalty stage: real-world evidence and patient profiles",launch=False,prio=30)
 rule(S,"rules","all",ALL,"none","stage == 'advocacy'","as_chosen","peer_experience","Advocacy: speaker and peer-experience content only",launch=False,prio=30)
-rule(S,"rules","all",ALL,"none","theme_ignored_count(content_theme) >= 2","as_chosen","next_theme","Theme {content_theme} ignored twice; skip to the next theme",launch=True,prio=50)
+rule(S,"rules","all",ALL,"none","theme_ignored_count(content_theme) >= 2","as_chosen","next_theme","Theme {content_theme} ignored twice; skip to the next theme",launch=False,prio=50)
 rule(S,"rules","all",ALL,"none","theme_received_days_ago(content_theme) < {no_repeat_days}","as_chosen","next_theme","Theme {content_theme} sent {theme_received_days_ago} days ago; do not repeat",dict(no_repeat_days=30),launch=False,prio=45)
 rule(S,"rules","all",ALL,"none","asset_variant_count(content_theme, channel) > 1","as_chosen","best_variant","Several approved variants; use the variant with the best response in {market}",launch=False,prio=20)
 rule(S,"rules","all",ALL,"none","hcp_language != market_language","as_chosen","same_theme","Use the asset in the physician's recorded language",launch=False,prio=20)
@@ -149,9 +149,17 @@ rule(F,"feedback","all",ALL,"none","last_dismiss_reason == 'seen_recently'","adj
 rule(F,"feedback","all",ALL,"none","last_dismiss_reason == 'routing'","adjust","none","Batch with other suggestions in the same area next week",launch=False,prio=0)
 rule(F,"feedback","all",ALL,"none","last_dismiss_reason == 'wrong_content'","adjust","none","Mark theme {content_theme} as not relevant for this physician; move to the next theme",launch=False,prio=0)
 rule(F,"feedback","all",ALL,"none","rule_accept_rate_30d < {min_accept_rate} and rule_triggers_30d >= 20","propose","none","Rule {rule_id} accepted {rule_accept_rate_30d}% of the time: propose a threshold change at the monthly review",dict(min_accept_rate=0.4),launch=True,prio=0)
+# R065 and R070 switched off at launch (docs/decisions.md): the history shows a response moves a physician only when
+# the content matches their journey stage (20% of matched responses moved a stage, 0.6% of unmatched), and both
+# rules move content ahead of the physician's stage. The brand team can switch them back on in the rule studio.
 # Added during the build (see docs/decisions.md): the always-on journey rule, so every eligible physician is
 # considered each week and the optimiser chooses the channel; trigger rules above add urgency and context.
-rule("engagement_triggers","rules","all",ALL,"opportunity","days_since_last_touch >= {nurture_gap_days} and stage != 'advocacy'","next_best","next_theme","No touch in {days_since_last_touch} days: next step in the {stage} journey",dict(nurture_gap_days=14),launch=True,prio=40)
+rule("engagement_triggers","rules","all",ALL,"opportunity","days_since_last_touch >= {nurture_gap_days} and stage != 'advocacy'","next_best","next_theme","No touch in {days_since_last_touch} days: next step in the {stage} journey",dict(nurture_gap_days=14),launch=False,prio=40)
+# Switched off when the baseline cycle plan was added (docs/decisions.md): the plan now gives every physician their
+# planned touches, and trigger rules reallocate part of them.
+# Defend the brick (added with the baseline plan): a brick in sustained decline puts its committed prescribers at risk;
+# reach the ones who have gone quiet, on whichever channel the optimiser finds best, inside the planned budget.
+rule(M,"rules",MV,ALL,"risk","brick_volume_r3m_pct <= -{decline_pct} and brick_r3m_months_declining >= {confirm_months} and brick_units_r3m >= {min_units} and stage in ['experience','loyalty','advocacy'] and days_since_last_response >= {silent_days}","next_best","next_theme","Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months and this {stage} prescriber has not responded in {days_since_last_response} days: defend",dict(decline_pct=5,confirm_months=2,min_units=100,silent_days=42),launch=True,prio=75)
 fams={}
 for r in R: fams[r['family']]=fams.get(r['family'],0)+1
 launch=sum(1 for r in R if r['enabled_at_launch'])

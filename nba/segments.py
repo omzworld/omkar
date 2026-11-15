@@ -30,3 +30,16 @@ def assign_tier(df: pd.DataFrame, score_col: str, group_cols: list[str] | None =
     a, b = shares["A"], shares["A"] + shares["B"]
     rank = df.groupby(group_cols or ["market"])[score_col].rank(pct=True, ascending=False, method="first")
     return np.where(rank <= a, "A", np.where(rank <= b, "B", "C"))
+
+
+def potential(c: pd.DataFrame) -> pd.Series:
+    """A physician's potential: specialty weight x brick potential x practice size relative to similar practices
+    (same market and practice type), capped between a quarter and four times the average. Organisations get 1."""
+    w = specialty_weight()
+    hcp = c.account_type == "hcp"
+    size = np.log1p(c.practice_size.astype(float).fillna(1))
+    peers = [c.market, c.practice_type.fillna("none")]
+    size_rel = (size / size.groupby(peers).transform("mean")).fillna(1)
+    raw = (c.specialty.map(w).fillna(OTHER_SPECIALTY_WEIGHT).astype(float)
+           * c.brick_potential_index.astype(float).fillna(100) / 100 * size_rel).clip(0.25, 4)
+    return pd.Series(np.where(hcp, raw, 1.0), index=c.index)

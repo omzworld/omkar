@@ -84,6 +84,7 @@ select t.account_id,
     coalesce(bool_or(t.channel = 'webinar' and t.responded and t.ts >= $as_of - interval 30 day), false)
                                                                                      as webinar_attended_30d,
     date_diff('day', max(t.ts) filter (where t.channel = 'webinar' and t.responded), $as_of) as days_since_webinar,
+    date_diff('day', max(l.last_resp_ts), $as_of)                                     as days_since_last_response,
     count(*) filter (where t.ts >= $as_of - interval 7 day and t.theme = l.last_theme) as same_theme_touches_7d,
     count(*) filter (where t.ts >= $as_of - interval 28 day)
       - count(*) filter (where t.ts >= $as_of - interval 56 day and t.ts < $as_of - interval 28 day) as touches_delta_4w,

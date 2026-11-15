@@ -120,15 +120,35 @@ def _execute(sim, w, date, idx, channel, doc_ids, rng):
     return resp
 
 
-def execute_engine(sim, w, date, sent: pd.DataFrame, suggestions: pd.DataFrame, week: int, rng) -> None:
-    """Carry out what the engine sent in test territories: accepted rep suggestions, agency emails, webinars."""
+def execute_engine(sim, w, date, sent: pd.DataFrame, suggestions: pd.DataFrame, week: int, rng) -> list:
+    """Carry out what happens in test territories: the reps' planned touches, the engine's changes they accepted
+    (a declined change means the planned touch goes ahead instead), agency emails and webinars. Returns the
+    planned candidates brought back by a declined change."""
     pos = pd.Series(range(sim.n), index=sim.h.id)
-    acc = suggestions[suggestions.status == "accepted"].set_index("account_id")
+    ok = suggestions[suggestions.status == "accepted"] if len(suggestions) else suggestions
+    acc_id = dict(zip(zip(ok.account_id, ok.suggested_channel), ok.id)) if len(ok) else {}
     rows = sim.rows
+    if "origin" not in sent:
+        sent = sent.assign(origin="rule")
+    # A swap the rep declined: they carry out the planned touch it would have replaced instead.
+    plan_rows = sent.origin == "plan"
+    accepted = pd.Series([(h, ch) in acc_id for h, ch in zip(sent.hcp_id, sent.final_channel)], index=sent.index)
+    swaps = sent[~plan_rows & sent.final_channel.isin(REP_DELIVERED)]
+    has_replaced = swaps.replaces_hcp.notna() & (swaps.replaces_hcp.astype(str) != "None") if "replaces_hcp" in swaps \
+        else pd.Series(False, index=swaps.index)
+    declined = swaps[~accepted[swaps.index] & has_replaced]
+    back = declined.assign(hcp_id=declined.replaces_hcp, asset_id=declined.replaces_asset, brand=declined.replaces_brand,
+                           origin="plan")
+    reinstated = declined.replaces.tolist()
+    sent = pd.concat([sent, back], ignore_index=True)
+    plan_rows = sent.origin == "plan"
+    accepted = pd.Series([(h, ch) in acc_id for h, ch in zip(sent.hcp_id, sent.final_channel)], index=sent.index)
+    sug_of = pd.Series([None if p else acc_id.get((h, ch)) for p, h, ch in zip(plan_rows, sent.hcp_id, sent.final_channel)],
+                       index=sent.index, dtype=object)
     for channel in ["rep_visit", "remote_call", "rep_email", "kam_visit", "kam_brief", "marketing_email", "webinar"]:
         s = sent[sent.final_channel == channel]
         if channel in REP_DELIVERED:
-            s = s[s.hcp_id.isin(acc.index)]
+            s = s[plan_rows[s.index] | accepted[s.index]]
         if s.empty:
             continue
         kam = channel in ("kam_visit", "kam_brief")
@@ -143,11 +163,11 @@ def execute_engine(sim, w, date, sent: pd.DataFrame, suggestions: pd.DataFrame, 
                 "call_type": "face_to_face", "status": "submitted", "product": office.brand.to_numpy(),
                 "key_message_ids": [f"{d}:KM1|{d}:KM2" if d else None for d in docs],
                 "next_step": rng.choice(["none", "send_material", "follow_up_call"], len(office), p=[0.4, 0.3, 0.3]),
-                "suggestion_id": office.hcp_id.map(acc.id).to_numpy() if channel in REP_DELIVERED else None}))
+                "suggestion_id": sug_of[office.index].to_numpy() if channel in REP_DELIVERED else None}))
         s = s.iloc[0:0] if kam else s[is_hcp]
         if s.empty:
             continue
-        sug_id = s.hcp_id.map(acc.id) if channel in REP_DELIVERED else pd.Series(None, index=s.index)
+        sug_id = sug_of[s.index] if channel in REP_DELIVERED else pd.Series(None, index=s.index)
         days = date + pd.to_timedelta(rng.integers(0, 5, len(s)), unit="D")
         idx = s.hcp_id.map(pos).to_numpy()
         resp = _execute(sim, w, date, idx, channel, s.asset_id.astype(object), rng)
@@ -177,10 +197,13 @@ def execute_engine(sim, w, date, sent: pd.DataFrame, suggestions: pd.DataFrame, 
                     "opened": resp, "clicked": clicked, "unsubscribed": unsub}))
         elif channel == "webinar":
             sim.ever_attended[idx[resp]] = True
+            sim.last_response_week[idx[resp]] = w
             rows["event_attendee_vod"].append(pd.DataFrame({
                 "event_id": [f"{m}-NBA-WEB-W{week:02d}" for m in s.market], "account_id": s.hcp_id.to_numpy(),
                 "event_type": "webinar", "event_date": date + pd.Timedelta(days=3),
                 "registered": resp | (rng.random(len(s)) < 0.12), "attended": resp}))
+
+    return reinstated
 
 
 def capture_consent(sim, date, rng, intro_ids: set) -> list[str]:
@@ -280,13 +303,15 @@ def simulate_week(week: int, sent: pd.DataFrame, suggestions: pd.DataFrame, data
     sim.rng = rng
     sim.clear_rows()
     w, date = sim.n_weeks + week, as_of(week)
-    hcp_arm, control_units = _arms(sim, data_dir)
-    sim.plan, sim.unit_plan = hcp_arm != "test", control_units
+    hcp_arm, _ = _arms(sim, data_dir)
+    # Control physicians follow today's plan; test physicians follow the engine's week (their baseline plan plus
+    # the changes reps accepted). Key account management keeps today's plan in both arms in this pilot.
+    sim.plan, sim.unit_plan = hcp_arm != "test", None
 
     sim.begin_week()
     sim.plan_week(w, date)                                   # control territories: today's plan
     suggestions = rep_decisions(sim, suggestions, week, rng, sent)
-    execute_engine(sim, w, date, sent, suggestions, week, rng)
+    reinstated = execute_engine(sim, w, date, sent, suggestions, week, rng)
     intro = set(sent[(sent.final_channel == "rep_visit") & (sent.content_theme == "introduction")].hcp_id)
     won = capture_consent(sim, date, rng, intro)
     unsub_now = sim.h.id.to_numpy()[sim.unsub_week == w].tolist()
@@ -307,4 +332,4 @@ def simulate_week(week: int, sent: pd.DataFrame, suggestions: pd.DataFrame, data
     save(sim, data_dir)
     return {"suggestions": len(suggestions), "accepted": int((suggestions.get("status") == "accepted").sum()),
             "dismissed": int((suggestions.get("status") == "dismissed").sum()), "consent_won": len(won),
-            "unsubscribed": len(unsub_now)}
+            "unsubscribed": len(unsub_now), "reinstated": reinstated}

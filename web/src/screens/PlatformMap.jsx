@@ -12,15 +12,16 @@ function makeGeo(narrow) {
   const [W, H, RX, RY] = narrow ? [1000, 1150, 330, 430] : [1000, 600, 360, 205];
   const CX = W / 2, CY = H / 2;
   // Clockwise from top left: data, rules, checks, ranking, delivery, learning, then back to data.
+  const step = 360 / STAGES.length;
   const POS = STAGES.map((_, i) => {
-    const a = ((-120 + i * 60) * Math.PI) / 180;
+    const a = ((-90 - step / 2 + i * step) * Math.PI) / 180;
     return { x: CX + RX * Math.cos(a), y: CY + RY * Math.sin(a) };
   });
   const LOOP = `M ${CX - RX} ${CY} A ${RX} ${RY} 0 1 1 ${CX + RX} ${CY} A ${RX} ${RY} 0 1 1 ${CX - RX} ${CY}`;
   return { W, H, CX, CY, POS, LOOP, narrow };
 }
 
-export default function PlatformMap({ week, readiness, feedback, go }) {
+export default function PlatformMap({ week, readiness, feedback, planData, go }) {
   const box = useRef(null);
   const [width, setWidth] = useState(1000);
   const narrow = width < 760;
@@ -59,10 +60,11 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
   const hcps = readiness ? readiness.headline.reduce((a, x) => a + x.healthcare_professionals, 0) : null;
   const chips = [
     hcps !== null ? `${num(hcps)} doctors` : "…",
+    planData ? `9 segments · same budget` : "quarterly",
     h ? `${num(h["triggers raised"])} triggers` : "…",
     h ? `${num(h.delayed + h.blocked)} held back` : "…",
-    h ? `${num(h["actions sent"])} sent` : "…",
-    week ? `${week.by_channel.length} channels` : "…",
+    h ? `${num(h["touches moved by the engine"])} moved` : "…",
+    h ? `${num(h["actions sent"])} touches` : "…",
     fbAcc !== null ? `${pct(fbAcc, 0)} accepted` : "learns weekly",
   ];
 
@@ -140,9 +142,9 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
 
           {/* Centre label */}
           <div className="pointer-events-none absolute text-center" style={{ left: `${(100 * CX) / W}%`, top: `${(100 * CY) / H}%`, transform: "translate(-50%,-50%)" }}>
-            <div className="display text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)] md:text-xs">Engine</div>
+            <div className="display text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)] md:text-xs">Same budget</div>
             <div className="display tabular text-sm font-semibold md:text-lg">{h ? num(h["actions sent"]) : "…"}</div>
-            <div className="text-[10px] text-[var(--ink-2)] md:text-[11px]">actions this week</div>
+            <div className="text-[10px] text-[var(--ink-2)] md:text-[11px]">touches this week</div>
           </div>
 
           {/* The six stages */}
@@ -198,7 +200,7 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
               </div>
               <div className="glass rounded-2xl p-5">
                 <div className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Live from the engine</div>
-                <StageVisual index={focus} week={week} readiness={readiness} feedback={feedback} />
+                <StageVisual index={focus} week={week} readiness={readiness} feedback={feedback} planData={planData} />
               </div>
             </div>
           </motion.div>
@@ -208,7 +210,7 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
       {/* Step controls while zoomed in, with tour progress */}
       {focus !== null && (
         <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t border-[var(--line)] bg-[#0b0b0f]/80 px-4 py-3 backdrop-blur md:px-6">
-          <button onClick={() => step(-1)} className="rounded-lg px-3 py-1.5 text-sm text-[var(--ink-2)] hover:text-[var(--accent)]">← {narrow ? "Previous" : STAGES[(focus + 5) % 6].title}</button>
+          <button onClick={() => step(-1)} className="rounded-lg px-3 py-1.5 text-sm text-[var(--ink-2)] hover:text-[var(--accent)]">← {narrow ? "Previous" : STAGES[(focus + STAGES.length - 1) % STAGES.length].title}</button>
           <div className="flex items-center gap-2">
             {STAGES.map((s, i) => (
               <button key={s.key} onClick={() => open(i)} aria-label={s.title}
@@ -220,7 +222,7 @@ export default function PlatformMap({ week, readiness, feedback, go }) {
               </button>
             ))}
           </div>
-          <button onClick={() => step(1)} className="rounded-lg px-3 py-1.5 text-sm text-[var(--ink-2)] hover:text-[var(--accent)]">{narrow ? "Next" : STAGES[(focus + 1) % 6].title} →</button>
+          <button onClick={() => step(1)} className="rounded-lg px-3 py-1.5 text-sm text-[var(--ink-2)] hover:text-[var(--accent)]">{narrow ? "Next" : STAGES[(focus + 1) % STAGES.length].title} →</button>
         </div>
       )}
     </div>
@@ -233,9 +235,10 @@ function StageIcon({ i, big }) {
   const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
   const paths = [
     <><ellipse cx="12" cy="6" rx="7" ry="3" {...p} /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" {...p} /></>,
+    <><rect x="3" y="3" width="7" height="7" rx="1.5" {...p} /><rect x="14" y="3" width="7" height="7" rx="1.5" {...p} /><rect x="3" y="14" width="7" height="7" rx="1.5" {...p} /><rect x="14" y="14" width="7" height="7" rx="1.5" {...p} /></>,
     <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" {...p} />,
     <><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3z" {...p} /><path d="m8.5 12 2.5 2.5 4.5-5" {...p} /></>,
-    <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" {...p} /></>,
+    <><path d="M4 7h11M11 3l4 4-4 4M20 17H9M13 13l-4 4 4 4" {...p} /></>,
     <><path d="M3 11 21 3l-8 18-2-8-8-2z" {...p} /></>,
     <><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4" {...p} /></>,
   ];

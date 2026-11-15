@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import re
+
 import duckdb
 import pandas as pd
 import pyarrow.parquet as pq
@@ -43,7 +45,9 @@ def read_hidden(name: str, data_dir: Path | None = None) -> pd.DataFrame:
 
 
 def tables(data_dir: Path | None = None) -> list[str]:
-    return sorted(p.stem for p in _dir(data_dir).glob("*.parquet"))
+    """Public table names. Files that are not valid table names (for example a sync tool's conflict copy such as
+    'hcp_segment 2.parquet') are ignored."""
+    return sorted(p.stem for p in _dir(data_dir).glob("*.parquet") if re.fullmatch(r"[a-z_][a-z0-9_]*", p.stem))
 
 
 def connect(data_dir: Path | None = None) -> duckdb.DuckDBPyConnection:

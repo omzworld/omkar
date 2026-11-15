@@ -81,6 +81,38 @@ def _assets(c: pd.DataFrame, as_of: pd.Timestamp, data_dir) -> pd.DataFrame:
     return out.drop(columns="expiration_date")
 
 
+def _plan_asset_fallback(c: pd.DataFrame, as_of: pd.Timestamp, data_dir) -> pd.DataFrame:
+    """A planned touch whose chosen theme has no approved, in-date asset in the physician's language uses the next
+    theme in the content sequence that has one, rather than being blocked week after week."""
+    if "origin" not in c or not (c.origin == "plan").any():
+        return c
+    bad = (c.origin == "plan") & ((c.asset_status != "approved") | (c.days_to_asset_expiry <= 0)
+                                  | (c.asset_language.notna() & (c.asset_language != c.hcp_language)))
+    if not bad.any():
+        return c
+    docs = data.read_table("promomats_document", data_dir)
+    docs = docs[(docs.status == "approved") & (pd.to_datetime(docs.approval_date) < as_of)
+                & (pd.to_datetime(docs.expiration_date) > as_of)].sort_values("document_id")
+    order = {t: i for i, t in enumerate(THEME_SEQUENCE)}
+    c = c.copy()
+    for i in c.index[bad]:
+        r = c.loc[i]
+        opts = docs[(docs.market == r.market) & (docs["product"] == r.brand) & (docs.channel == r.channel)
+                    & (docs.language == r.hcp_language)]
+        if opts.empty:
+            continue
+        start = order.get(r.content_theme, 0)
+        # Content for the physician's own stage first (only that moves them, as the history shows), then the
+        # next theme in the sequence.
+        opts = opts.assign(o=opts.content_theme.map(lambda t: (order.get(t, 99) - start) % 100),
+                           off=(opts.journey_stage != r.stage).astype(int))
+        pick = opts.sort_values(["off", "o", "document_id"]).iloc[0]
+        c.loc[i, ["content_theme", "asset_id", "asset_status", "asset_market", "asset_language", "key_messages"]] = \
+            [pick.content_theme, pick.document_id, "approved", pick.market, pick.language, pick.key_messages]
+        c.loc[i, "days_to_asset_expiry"] = (pd.to_datetime(pick.expiration_date) - as_of).days
+    return c
+
+
 def _history(c: pd.DataFrame, feats: Features) -> pd.DataFrame:
     """The physician's and the segment's touches and response rate on the candidate's channel."""
     cs = feats.channel_stats
@@ -107,6 +139,7 @@ def build(triggers: pd.DataFrame, feats: Features, data_dir=None) -> pd.DataFram
     c = c[trigger_cols].merge(feats.table, on="hcp_id", how="left")
     c["content_theme"] = resolve_themes(c, feats)
     c = _assets(c, feats.as_of, data_dir)
+    c = _plan_asset_fallback(c, feats.as_of, data_dir)
     # Same theme already received in the last 7 days, on any channel (recomputed for the candidate's theme).
     days = feats.context().theme_received_days_ago(c, c.content_theme)
     c["same_theme_touches_7d"] = (days <= 7).astype(int)

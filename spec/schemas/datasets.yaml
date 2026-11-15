@@ -146,6 +146,26 @@ tables:
     grain: one row per HCP per week
     fields: {account_id: string, week: date, stage: {type: string, values: [curiosity, consideration, experience, loyalty, advocacy]}}
 
+  rep_plan_input:
+    source: Veeva CRM (rep adjustments to the cycle plan; added during the build)
+    grain: one row per rep adjustment per planning cycle
+    fields: {account_id: string, user_id: string, cycle_start: date, adjustment: {type: string, values: [must_see, no_access, left_practice, more_digital]}, reason: string}
+
+  hcp_segment:
+    source: Engine (written by the plan module each planning cycle; added during the build)
+    grain: one row per physician per planning cycle
+    fields: {account_id: string, cycle: int, cycle_start: date, market: string, potential_score: float, adoption_score: float, responsiveness_score: float, potential_band: {type: string, values: [high, medium, low]}, adoption_band: {type: string, values: [early, building, established]}, segment: string, current_tier: {type: string, values: [A, B, C]}, best_channel: string, moved: bool, move_reason: string}
+
+  call_plan:
+    source: Engine (written by the plan module each planning cycle; added during the build)
+    grain: one row per physician per channel per planning cycle
+    fields: {account_id: string, cycle: int, cycle_start: date, user_id: string, segment: string, channel: string, last_year_touches: float, recommended_touches: int, rep_adjusted: bool, final_touches: int}
+
+  segment_budget:
+    source: Engine (written by the plan module each planning cycle; added during the build)
+    grain: one row per segment per channel per planning cycle
+    fields: {cycle: int, cycle_start: date, market: string, segment: string, channel: string, physicians: int, last_year_touches: float, recommended_touches: int, change_pct: float, cost_last_year_eur: float, cost_recommended_eur: float}
+
 derived:
   feature_table:
     grain: one row per account per run week

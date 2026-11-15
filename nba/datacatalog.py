@@ -42,6 +42,10 @@ RELATIONS = [
     ("suggestion_vod", "account_id", "account_vod", "id", "engine suggestions"),
     ("suggestion_vod", "user_id", "user_vod", "id", "suggestion's rep"),
     ("rep_brief", "user_id", "user_vod", "id", "weekly talk track"),
+    ("rep_plan_input", "account_id", "account_vod", "id", "rep adjustments to the plan"),
+    ("hcp_segment", "account_id", "account_vod", "id", "physician's segment each quarter"),
+    ("call_plan", "account_id", "account_vod", "id", "planned touches per physician"),
+    ("call_plan", "user_id", "user_vod", "id", "rep who owns the planned touch"),
 ]
 _CACHE: dict = {}
 
@@ -172,7 +176,7 @@ def preview(name: str, limit: int = 50, offset: int = 0, search: str = "", sort:
     total = con.execute(f"SELECT count(*) FROM {src} {where}", params).fetchone()[0]
     df = con.execute(f"SELECT * FROM {src} {where} {order} LIMIT {limit} OFFSET {offset}", params).df()
     return {"name": name, "columns": cols, "rows": df, "total": int(total), "offset": offset, "limit": limit,
-            "all_rows": pq.ParquetFile(f).metadata.num_rows, "week": week, "weeks": weeks, "file": f.relative_to(spec.ROOT).as_posix()}
+            "all_rows": pq.ParquetFile(f).metadata.num_rows, "week": week, "weeks": weeks, "file": f"{d.name}/{f.relative_to(d).as_posix()}"}
 
 
 def build(max_age_s: float = 20) -> dict:

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { api, eur, num, pct } from "../api";
-import { Button, Card, Field, inputClass, Message, Stat } from "../ui";
+import { Button, Card, Field, inputClass, Message, Stat, Table } from "../ui";
 import { CountUp } from "../fx.jsx";
 import { GapChart, PilotConsole, ReturnDial } from "../viz.jsx";
 
@@ -13,7 +13,7 @@ export default function Results({ pilot, runPilot }) {
   const done = pilot?.completed_weeks ?? 0;
   const running = pilot?.running;
   // null = use the assumptions file or the measured value
-  const [inputs, setInputs] = useState({ fee: null, margin: 70, sales: "", lift: null, savings: true });
+  const [inputs, setInputs] = useState({ fee: null, margin: 70, sales: "", lift: null, savings: false });
   const [m, setM] = useState(null);
   const [err, setErr] = useState(null);
   const first = useRef(true);
@@ -45,8 +45,9 @@ export default function Results({ pilot, runPilot }) {
       <header>
         <h1 className="text-2xl font-semibold">Results and return</h1>
         <p className="mt-1 max-w-3xl text-[var(--ink-2)]">
-          Test territories ran the engine; control territories ran today's plan. Territories were split before the
-          pilot and never changed, so the difference between them is the engine's effect.
+          Test territories ran the quarterly plan with weekly reallocation; control territories ran today's plan.
+          Both had the same budget: test spent last year's, moved inside it. Territories were split before the pilot
+          and never changed, so the difference between them is the effect of better allocation, not of more spend.
         </p>
       </header>
 
@@ -86,6 +87,9 @@ export default function Results({ pilot, runPilot }) {
             </div>
           </div>
         </motion.section>
+
+        {m.spend && <SpendCheck sp={m.spend} />}
+        {m.reallocation?.planned_due > 0 && <Reallocated r={m.reallocation} />}
 
         <Card title="Movicol brick sales, test vs control" subtitle="Units per month, indexed so the six months before the pilot average 100. One axis for both groups; the green area is the gap the engine opened.">
           <GapChart data={m.monthly_index} />
@@ -132,7 +136,7 @@ export default function Results({ pilot, runPilot }) {
               <Field label="Brand sales per quarter (€)" hint="blank = synthetic test territories; enter the client's real figure to see roll-out scale">
                 <input className={inputClass} value={inputs.sales} onChange={(e) => set("sales", e.target.value)} placeholder="e.g. 20000000" inputMode="numeric" />
               </Field>
-              <label className="flex items-center gap-3 text-sm">
+              <label className="flex items-center gap-3 text-sm" title="Off by default: the budget is the same in both arms, so there is no saving to count.">
                 <button type="button" role="switch" aria-checked={inputs.savings} onClick={() => set("savings", !inputs.savings)}
                   className={`relative h-6 w-11 rounded-full transition ${inputs.savings ? "bg-[var(--accent)] shadow-[0_0_14px_-2px_var(--accent)]" : "bg-[var(--chip)]"}`}>
                   <motion.span layout className="absolute top-1 h-4 w-4 rounded-full bg-white" style={{ left: inputs.savings ? 24 : 4 }} />
@@ -256,5 +260,68 @@ function Waterfall({ rm }) {
         </div>
       ))}
     </div>
+  );
+}
+
+// The budget-neutral check: same spend per physician in both arms, and test against its own planned budget.
+function SpendCheck({ sp }) {
+  const ok = sp.equal;
+  const ch = { rep_visit: "Visits", remote_call: "Remote calls", rep_email: "Rep emails", marketing_email: "Marketing emails", webinar: "Webinar seats" };
+  return (
+    <Card title="Same budget in both arms?" subtitle={`Spend per physician over the pilot. Budget neutral means within ±${sp.tolerance_pct}%.`}
+      actions={<span className={`btn-pill border px-3 py-1 text-sm font-semibold ${ok ? "border-[var(--good)] text-[var(--good-ink)]" : "border-[var(--warn)] text-[var(--warn)]"}`}>{ok ? "✓ Budget neutral" : "Outside the band"}</span>}>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Box label="Spend per physician" a={eur(sp.test_cost_per_physician_eur)} b={eur(sp.control_cost_per_physician_eur)} diff={sp.cost_diff_pct} />
+        <Box label="Touches per physician" a={num(sp.test_touches_per_physician, 1)} b={num(sp.control_touches_per_physician, 1)} diff={sp.touches_diff_pct} />
+        {sp.plan_budget_eur != null && (
+          <div className="rounded-2xl border border-[var(--line)] bg-black/20 p-4">
+            <div className="text-xs text-[var(--ink-2)]">Test against its planned budget</div>
+            <div className="display tabular mt-1 text-2xl font-bold">{eur(sp.plan_spent_eur)}</div>
+            <div className="text-xs text-[var(--muted)]">of {eur(sp.plan_budget_eur)} planned ({sp.vs_plan_pct >= 0 ? "+" : ""}{num(sp.vs_plan_pct, 1)}%): touches blocked by consent or eligibility are not made up</div>
+          </div>
+        )}
+      </div>
+      <div className="mt-4">
+        <Table rows={sp.by_channel} columns={[
+          { key: "channel", label: "Per physician", render: (r) => ch[r.channel] || r.channel },
+          { key: "test_per_physician", label: "Test", num: true }, { key: "control_per_physician", label: "Control", num: true },
+          { key: "cost_per_touch_eur", label: "Cost per touch", num: true, render: (r) => eur(r.cost_per_touch_eur) }]} />
+      </div>
+      <p className="mt-3 text-xs text-[var(--muted)]">Test spends last year's budget. Today's plan in control is not capped and drifts with the email list and the visit trend, so a small gap against control is expected; the plan itself is the budget.</p>
+    </Card>
+  );
+}
+
+function Box({ label, a, b, diff }) {
+  return (
+    <div className="rounded-2xl border border-[var(--line)] bg-black/20 p-4">
+      <div className="text-xs text-[var(--ink-2)]">{label}</div>
+      <div className="mt-1 flex items-baseline gap-2"><span className="display tabular text-2xl font-bold text-[var(--accent)]">{a}</span><span className="text-sm text-[var(--muted)]">test</span></div>
+      <div className="flex items-baseline gap-2"><span className="display tabular text-lg font-semibold text-[var(--series-2)]">{b}</span><span className="text-sm text-[var(--muted)]">control</span></div>
+      <div className="text-xs text-[var(--muted)]">{diff >= 0 ? "+" : ""}{num(diff, 1)}% test against control</div>
+    </div>
+  );
+}
+
+// What the engine moved over the pilot, and from which segments to which.
+function Reallocated({ r }) {
+  const max = Math.max(...r.by_segment.map((x) => Math.abs(x.net)), 1);
+  return (
+    <Card title="What the engine reallocated" subtitle={`${num(r.moved)} of ${num(r.planned_due)} planned touches (${num(r.moved_pct, 1)}%) moved to a physician who needed them more; ${num(r.delivered_as_planned)} went ahead as planned.`}>
+      <div className="space-y-1.5">
+        {r.by_segment.map((x, i) => (
+          <div key={x.segment} className="grid grid-cols-[minmax(10rem,15rem)_1fr_6rem] items-center gap-3 text-sm">
+            <span className="text-[var(--ink-2)]">{x.segment}</span>
+            <div className="relative h-3">
+              <div className="absolute inset-y-0 left-1/2 w-px bg-[var(--axis)]" />
+              <motion.div className="absolute inset-y-0 rounded" style={{ background: x.net >= 0 ? "var(--good)" : "var(--accent-2)", [x.net >= 0 ? "left" : "right"]: "50%" }}
+                initial={{ width: 0 }} whileInView={{ width: `${(50 * Math.abs(x.net)) / max}%` }} viewport={{ once: true }} transition={{ delay: i * 0.04, duration: 0.6 }} />
+            </div>
+            <span className="tabular text-right">{x.net >= 0 ? "+" : ""}{num(x.net)} <span className="text-xs text-[var(--muted)]">net</span></span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-[var(--muted)]">Net touches gained (green) or given up (coral) by each segment, after the quarterly plan. Moves are like for like and never add to the total.</p>
+    </Card>
   );
 }

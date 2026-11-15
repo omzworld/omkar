@@ -4,8 +4,10 @@ expected return = chance of response x value of response x decay - cost of touch
 
 Chance comes in three tiers (rules R051-R053): the physician's own response rate on that channel if they have
 at least 10 touches; else the segment's (market x specialty x channel) if it has at least 50; else the IQVIA
-channel preference benchmark. Value is the yearly value of moving the physician one journey stage
-(return_assumptions.yaml), over the value horizon, weighted by their potential. Cost is the touch cost.
+channel preference benchmark. Value of a response is what it buys at the physician's stage, learned from history
+(nba.learn): the chance it moves them up a stage times that move's yearly value, plus the chance it keeps them
+from slipping back times the value of their current stage (return_assumptions.yaml), over the value horizon,
+weighted by their potential. Cost is the touch cost.
 
 Selection, in the order of spec/examples/optimiser_example.md:
 1. drop candidates with a negative expected return;
@@ -25,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 from nba import data, spec
-from nba.segments import specialty_weight
+from nba.segments import potential as segment_potential
 
 STAGES = ["curiosity", "consideration", "experience", "loyalty", "advocacy"]
 # Where a channel has no history of its own, borrow the closest one for the chance of response.
@@ -76,17 +78,23 @@ def value(c: pd.DataFrame) -> pd.Series:
     """Value of a response in EUR."""
     a = spec.assumptions()
     horizon = a.get("value_horizon_years", 1)
-    w = specialty_weight()
     hcp = c.account_type == "hcp"
-    # Potential: specialty weight x brick potential x practice size relative to similar practices (same market and
-    # practice type), capped so one physician is worth between a quarter and four times the average.
-    size = np.log1p(c.practice_size.astype(float).fillna(1))
-    peers = [c.market, c.practice_type.fillna("none")]
-    size_rel = (size / size.groupby(peers).transform("mean")).fillna(1)
-    potential = np.where(hcp, (c.specialty.map(w).fillna(0.6).astype(float)
-                               * c.brick_potential_index.astype(float).fillna(100) / 100 * size_rel).clip(0.25, 4), 1.0)
-    step = np.where(c.trigger_type == "risk", 0, 1)
-    stage_value = np.array([_stage_value(b, m, s, k) for b, m, s, k in zip(c.brand, c.market, c.stage, step)])
+    potential = segment_potential(c).to_numpy()          # nba.segments.potential, shared with the segmentation
+    # What a response is worth: the chance it moves the physician up a stage times the value of that move, plus the
+    # chance it keeps them from slipping back (over the weeks it protects) times the value of their current stage.
+    # Both chances are learned per stage from the engine's own history (nba.learn), not assumed.
+    from nba.learn import response_value_factors
+    matched = None
+    if "asset_id" in c:      # a candidate with content: matched when the asset's journey stage is the physician's
+        docs = data.read_table("promomats_document").set_index("document_id").journey_stage
+        js = c.asset_id.map(docs)
+        matched = pd.Series([isinstance(a, str) and isinstance(b, str) and a == b for a, b in zip(js, c.stage)],
+                            index=c.index)                      # no asset, or an unknown stage, counts as unmatched
+    move, keep = response_value_factors(c.stage, matched)
+    v_next = np.array([_stage_value(b, m, s, 1) for b, m, s in zip(c.brand, c.market, c.stage)])
+    v_here = np.array([_stage_value(b, m, s, 0) for b, m, s in zip(c.brand, c.market, c.stage)])
+    stage_value = move * np.nan_to_num(v_next) + keep * np.nan_to_num(v_here)
+    stage_value = np.where(np.isnan(v_next) & np.isnan(v_here), np.nan, stage_value)
     # Plenvu/Moviprep is valued on endoscopy procedures: EUR per point of share gained in the physician's unit.
     plenvu = a["stage_move_value"]["Plenvu_Moviprep"]["value_per_procedure_point"]
     unit_value = plenvu * 4 * c.unit_colonoscopies_qtr.astype(float).fillna(1000) / 100

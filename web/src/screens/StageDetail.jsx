@@ -5,30 +5,35 @@ import { CountUp } from "../fx.jsx";
 
 // The six stages, in the order the engine runs them each week. `to` is the screen that shows the stage in full.
 export const STAGES = [
-  { key: "data", title: "Read the data", to: "readiness",
+  { key: "data", title: "Read the data", to: "data",
     text: "Every week starts from what is known about each doctor and account: calls, emails, events, sales by area and consent to be contacted.",
-    how: ["One row per doctor or account, rebuilt every week", "24 months of history to learn from", "Consent recorded per channel and market"] },
-  { key: "rules", title: "Spot a reason to act", to: "rules",
-    text: "Rules look for a risk or an opportunity, such as sales falling in an area or a doctor not seen for months, and raise a trigger with a one-line reason.",
-    how: ["Rules are written and tested by marketers", "Every trigger carries the rule that raised it", "Discovery adds what the rules missed, capped at 10%"] },
+    how: ["Client source formats: Veeva CRM, PromoMats, OpenData, IQVIA", "24 months of history, checked live", "Consent recorded per channel and market"] },
+  { key: "plan", title: "Segment & plan", to: "plan",
+    text: "Each quarter every physician is segmented on potential, adoption and responsiveness, and last year's budget becomes a plan: the same total, shifted to the segments where a touch is worth most. Reps adjust it.",
+    how: ["Same budget as last year, by channel", "Each segment within ±20% of last year", "Reps' adjustments from the CRM, each with a reason"] },
+  { key: "rules", title: "Spot a risk or opportunity", to: "rules",
+    text: "Rules look for a reason to act now: a sales area in a steady decline, a competitor gaining, a doctor going quiet or ready for the next step. Each raises a trigger with a one-line reason.",
+    how: ["Rolling 3-month trends, confirmed over months", "Written and tested by marketers in the rule studio", "Every trigger carries the rule that raised it"] },
   { key: "checks", title: "Check what is allowed", to: "week",
-    text: "Before anything is planned, every candidate action is checked against consent, contact limits, content expiry and rep capacity.",
-    how: ["Allowed, delayed or blocked", "Each verdict names the check that made it", "Market rules, such as German double opt-in, are enforced"] },
-  { key: "rank", title: "Rank by expected return", to: "week",
-    text: "What is allowed is scored, the best action per doctor is kept, and rep and agency time is filled with the highest return first.",
-    how: ["Chance of response × value − cost of the touch", "A cheaper channel is used when reps are full", "Everything not sent says why"] },
-  { key: "deliver", title: "Deliver the plan", to: "delivery",
-    text: "The plan becomes suggestions in the reps' CRM, briefs for key account managers, files for the agency and a weekly talk track for each rep.",
-    how: ["Veeva CRM suggestion payloads", "Key account manager briefs per unit", "In this demo nothing is actually sent"] },
-  { key: "learn", title: "Learn from responses", to: "feedback",
-    text: "Reps accept or dismiss each suggestion and doctors respond or not. That feeds next week's data, and rules the field keeps rejecting are flagged for change.",
-    how: ["Acceptance and dismissal reasons by rule", "Proposed rule changes for a marketer to approve", "Next week starts smarter than this one"] },
+    text: "Every candidate touch is checked against consent, contact limits, content expiry and eligibility before it can go anywhere.",
+    how: ["Allowed, delayed or blocked, with the reason", "Market rules such as German double opt-in", "Planned touches follow the same compliance rules"] },
+  { key: "rank", title: "Move touches within the plan", to: "week",
+    text: "Planned touches and the new reasons to act are scored on the same scale. Where a risk or opportunity is worth clearly more, it takes the slot of the weakest planned touch of the same rep, on the same channel.",
+    how: ["Chance of response × value − cost of the touch", "At most 20% of planned touches a quarter, paced weekly", "Never adds touches: same total, same spend"] },
+  { key: "deliver", title: "Deliver the week", to: "delivery",
+    text: "Reps get their plan plus the engine's changes as suggestions in their CRM, with a short talk track; the agency gets its email file. A rep can decline a change and the planned touch goes ahead.",
+    how: ["Veeva CRM suggestions for the changes only", "Weekly talk track per rep", "In this demo nothing is actually sent"] },
+  { key: "learn", title: "Learn and re-plan", to: "feedback",
+    text: "Responses, acceptances and dismissal reasons feed next week's signals, and next quarter's segmentation and plan start from what this quarter showed.",
+    how: ["Acceptance and dismissal reasons by rule", "Rule changes proposed for a marketer to approve", "Next quarter's plan uses this quarter's responses"] },
 ];
 
 const fade = (i = 0) => ({ initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.25 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] } });
 
-export function StageVisual({ index, week, readiness, feedback }) {
+export function StageVisual({ index: shown, week, readiness, feedback, planData }) {
   const h = week?.headline;
+  if (shown === 1) return <PlanVisual p={planData} />;
+  const index = shown > 1 ? shown - 1 : shown;
   const loading = <p className="text-sm text-[var(--muted)]">Asking the engine for live numbers…</p>;
 
   if (index === 0) {
@@ -107,25 +112,23 @@ export function StageVisual({ index, week, readiness, feedback }) {
   if (index === 3) {
     return (
       <div className="space-y-5">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <Big i={0} value={num(h["planned touches due"])} label="planned touches due this week" />
+          <motion.span {...fade(1)} className="text-2xl text-[var(--accent-2)]">→</motion.span>
+          <Big i={2} value={num(h["touches moved by the engine"])} label="moved to a risk or opportunity" tone="good" />
+        </div>
         <motion.div {...fade(0)} className="flex flex-wrap items-center gap-2 text-sm">
           {["Chance of response", "×", "Value of response", "−", "Cost of touch", "=", "Expected return"].map((t, i) => (
             <motion.span key={i} initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.08 }}
               className={["×", "−", "="].includes(t) ? "text-lg text-[var(--muted)]" : `rounded-lg px-2.5 py-1 ${i === 6 ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[var(--accent)]" : "glass"}`}>{t}</motion.span>
           ))}
         </motion.div>
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <Big i={1} value={num(h.allowed)} label="allowed actions" />
-          <motion.span {...fade(2)} className="text-2xl text-[var(--accent)]">→</motion.span>
-          <Big i={3} value={num(h["actions sent"])} label="sent: the best per doctor that fit capacity" />
-        </div>
+        <motion.p {...fade(3)} className="text-sm text-[var(--ink-2)]">A move happens only when the new reason beats the weakest planned touch of the same rep on the same channel by a clear margin; the total stays {num(h["actions sent"])} touches.</motion.p>
         <div className="grid grid-cols-2 gap-3">
           <Big i={4} value={eur(h["total expected return (EUR)"])} label="expected return this week" tone="good" />
-          <Big i={5} value={eur(h["total cost of touches sent (EUR)"])} label="cost of the touches sent" />
+          <Big i={5} value={eur(h["total cost of touches sent (EUR)"])} label="cost of the week, as planned" />
         </div>
-        <motion.div {...fade(6)}>
-          <div className="mb-2 text-sm text-[var(--ink-2)]">Allowed but not sent, and why</div>
-          <Meter rows={week.not_sent.map((n) => ({ label: n.reason, value: n.candidates, text: num(n.candidates) }))} />
-        </motion.div>
+
       </div>
     );
   }
@@ -213,6 +216,28 @@ function Meter({ rows, max, color = "var(--accent)" }) {
           <span className="tabular w-14 text-right">{r.text}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function PlanVisual({ p }) {
+  if (!p) return <p className="text-sm text-[var(--muted)]">Building the quarter's plan…</p>;
+  const bands = ["high", "medium", "low"], adopt = ["early", "building", "established"];
+  const max = Math.max(...p.grid.map((g) => g.physicians), 1);
+  const ly = p.by_channel.reduce((a, r) => a + r.cost_last_year_eur, 0), rec = p.by_channel.reduce((a, r) => a + r.cost_recommended_eur, 0);
+  return (
+    <div className="space-y-5">
+      <motion.div {...fade(0)} className="grid grid-cols-[4.5rem_repeat(3,1fr)] gap-1 text-xs">
+        <div />{adopt.map((a) => <div key={a} className="text-center uppercase tracking-wider text-[var(--muted)]">{a}</div>)}
+        {bands.map((b) => [<div key={b} className="flex items-center uppercase tracking-wider text-[var(--muted)]">{b}</div>,
+          ...adopt.map((a) => { const g = p.grid.find((x) => x.potential_band === b && x.adoption_band === a) || { physicians: 0 };
+            return <div key={b + a} className="rounded-lg p-2 text-center" style={{ background: `rgba(106,109,255,${0.08 + 0.5 * g.physicians / max})` }}><span className="display tabular text-base font-bold">{num(g.physicians)}</span></div>; })])}
+      </motion.div>
+      <div className="grid grid-cols-2 gap-3">
+        <Big i={1} value={eur(ly)} label="last year, one quarter" />
+        <Big i={2} value={eur(rec)} label="recommended: same budget, new split" tone="good" />
+      </div>
+      <motion.p {...fade(3)} className="text-sm text-[var(--ink-2)]">{num(p.moved)} physicians changed band from today's tiers, each with a reason; reps made {num(p.rep_inputs.length)} adjustments.</motion.p>
     </div>
   );
 }

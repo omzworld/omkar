@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from nba import data, delivery, feedback, features, pipeline, spec
+from nba import data, delivery, feedback, features, pipeline, plan, spec
 
 
 def reset(data_dir: Path | None = None) -> None:
@@ -43,9 +43,26 @@ def run(weeks: int, dial: float = 1.0, overrides: dict | None = None, data_dir: 
     rows = [] if done == 0 else pd.read_parquet(root / "runs" / "summary.parquet").to_dict("records")
     for week in range(done + 1, weeks + 1):
         features.build(week, data_dir)
-        r = pipeline.run_week(week, overrides, dial=dial, data_dir=data_dir)
+        # The baseline plan: segment and allocate at the start of each cycle, otherwise carry on the schedule.
+        state = plan.start_cycle(plan.cycle_of(week), data_dir) if plan.week_in_cycle(week) == 1 \
+            else pd.read_parquet(root / "runs" / "plan_state.parquet")
+        state = plan.top_up_lists(state, features.load_snapshot(week, data_dir), week)   # newly consented join emails
+        (root / "runs" / f"week_{week:02d}").mkdir(parents=True, exist_ok=True)
+        state.to_parquet(root / "runs" / f"week_{week:02d}" / "plan_state_before.parquet", index=False)
+        r = pipeline.run_week(week, overrides, dial=dial, data_dir=data_dir, plan_state=state)
         sug = delivery.deliver(r, data_dir)
         outcome = feedback.simulate_week(week, r.sent, sug, data_dir)
+        reinstated = set(outcome.pop("reinstated", []))
+        d = r.decisions
+        planned = d[d.origin == "plan"]
+        delivered = set(zip(planned.hcp_id[planned.status == "sent"], planned.channel[planned.status == "sent"]))
+        moved = planned[planned.status == "moved"]
+        back = moved[moved.candidate_id.isin(reinstated)]           # a rep declined the swap and did the planned touch
+        delivered |= set(zip(back.hcp_id, back.channel))
+        swapped_out = set(zip(moved.hcp_id, moved.channel)) - set(zip(back.hcp_id, back.channel))
+        dropped = set(zip(planned.hcp_id[planned.status == "blocked"], planned.channel[planned.status == "blocked"]))
+        state = plan.record(state, r.due, delivered, week, swapped_out, dropped)
+        state.to_parquet(root / "runs" / "plan_state.parquet", index=False)
         h = pipeline.summary(r)["headline"]
         row = {"week": week, "run_date": r.feats.as_of, "triggers": h["triggers raised"], "allowed": h["allowed"],
                "delayed": h["delayed"], "blocked": h["blocked"], "sent": h["actions sent"],

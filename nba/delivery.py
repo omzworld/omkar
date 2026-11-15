@@ -52,9 +52,10 @@ def _label(text) -> str:
 # --------------------------------------------------------------------------------------------- suggestions
 
 def suggestions(r: WeekResult, data_dir=None) -> pd.DataFrame:
-    """One Veeva suggestion per action a rep or key account manager is asked to take (suggestion_vod rows)."""
-    s = r.sent[r.sent.final_channel.isin(REP_DELIVERED)].sort_values(["final_return", "candidate_id"],
-                                                                      ascending=[False, True])
+    """One Veeva suggestion per change the engine asks a rep or key account manager to make to their plan
+    (suggestion_vod rows). Planned touches are the rep's call plan, not suggestions."""
+    s = r.sent[r.sent.final_channel.isin(REP_DELIVERED) & (r.sent.origin != "plan")] \
+        .sort_values(["final_return", "candidate_id"], ascending=[False, True])
     names = data.read_table("account_vod", data_dir).set_index("id").name
     owner = s.kam_user_id.where(s.final_channel.isin(["kam_visit", "kam_brief"]), s.rep_user_id)
     title = [f"{CHANNEL_LABEL[ch].capitalize()}: {_label(t) or 'check in'} - {names.get(a, a)}"[:80]
@@ -136,10 +137,10 @@ def structured_brief(r: WeekResult, rep: str, territory: pd.Series, sug: pd.Data
     d = r.decisions[r.decisions.territory_id == territory.id]
     held = d[d.status == "not_sent"]
     reasons = held.constraint_id.fillna("").astype(str) + " " + held.not_sent_reason.fillna("")
-    sent = r.sent.set_index("hcp_id")
+    sent = r.sent.drop_duplicates(["hcp_id", "final_channel"]).set_index(["hcp_id", "final_channel"])
     items = []
     for rank, (_, s) in enumerate(mine.iterrows(), start=1):
-        dec = sent.loc[s.account_id]
+        dec = sent.loc[(s.account_id, s.suggested_channel)]
         msgs = dec.key_messages.split("|") if isinstance(dec.key_messages, str) else []
         items.append({"rank": rank, "physician": names.get(s.account_id, s.account_id),
                       "account": parents.get(s.account_id, ""), "channel": CHANNEL_LABEL[s.suggested_channel],
@@ -185,7 +186,7 @@ def template_prose(b: dict) -> str:
                      + (" and the trend is steady" if steady else ", a one-off for now") if abs(c) >= 1
                      else f"brick {br['brick_id']} is flat")
     if trend:
-        lines.append("Over the last 3 months against the 3 before, " + ", ".join(trend) + ".")
+        lines.append("Over the last three months against the three before, " + ", ".join(trend) + ".")
     lines += ["", "This week's suggestions."]
     if not b["suggestions"]:
         lines.append("No new suggestions this week; follow your call plan.")

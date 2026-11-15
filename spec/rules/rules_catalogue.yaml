@@ -1125,7 +1125,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: none
-  enabled_at_launch: true
+  enabled_at_launch: false
   condition: stage == 'consideration' and theme_received('patient_case') == True
   action:
     channel: as_chosen
@@ -1211,7 +1211,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: none
-  enabled_at_launch: true
+  enabled_at_launch: false
   condition: theme_ignored_count(content_theme) >= 2
   action:
     channel: as_chosen
@@ -2356,7 +2356,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: true
+  enabled_at_launch: false
   condition: days_since_last_touch >= {nurture_gap_days} and stage != 'advocacy'
   action:
     channel: next_best
@@ -2366,5 +2366,28 @@ rules:
   reason_template: 'No touch in {days_since_last_touch} days: next step in the {stage} journey'
   parameters:
     nurture_gap_days: 14
+  owner: brand
+  notes: ''
+- id: R136
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: brick_volume_r3m_pct <= -{decline_pct} and brick_r3m_months_declining >= {confirm_months} and brick_units_r3m
+    >= {min_units} and stage in ['experience','loyalty','advocacy'] and days_since_last_response >= {silent_days}
+  action:
+    channel: next_best
+    content_theme: next_theme
+    timing: this_week
+  priority: 75
+  reason_template: 'Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months and this {stage} prescriber has not responded
+    in {days_since_last_response} days: defend'
+  parameters:
+    decline_pct: 5
+    confirm_months: 2
+    min_units: 100
+    silent_days: 42
   owner: brand
   notes: ''

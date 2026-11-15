@@ -16,7 +16,8 @@ from nba import data, schema, spec
 from nba.synth import behaviour, content, entities, sales
 from nba.synth.history import History
 
-ENGINE_TABLES = ["suggestion_vod", "rule_draft", "ml_candidate", "rep_brief", "proposed_rule"]
+ENGINE_TABLES = ["suggestion_vod", "rule_draft", "ml_candidate", "rep_brief", "proposed_rule", "hcp_segment",
+                 "call_plan", "segment_budget"]
 
 
 def _account_tables(world: dict) -> dict:
@@ -55,6 +56,28 @@ def _addresses(rng, account: pd.DataFrame, world: dict) -> pd.DataFrame:
                          "city": account.id.map(towns), "brick_id": account.brick_id,
                          "rural_flag": account.brick_id.map(b.rural).astype(bool),
                          "postal_address_verified": rng.random(n) < 0.92, "primary": True})
+
+
+def _rep_plan_input(rng, design, world: dict) -> pd.DataFrame:
+    """Reps' adjustments to the cycle plan, as they would enter them in the CRM before each cycle (about 4% of
+    physicians each cycle). Two cycles: the pilot's first and second quarter."""
+    h = world["hcp"]
+    terr = world["territories"].set_index("id").rep_user_id
+    start = pd.Timestamp(design["clock"]["pilot_start"])
+    kinds = {"must_see": ("Key opinion leader for the area; wants a visit every month", 0.35),
+             "no_access": ("Practice does not see reps; keep to approved email", 0.30),
+             "more_digital": ("Asked for information by email rather than visits", 0.25),
+             "left_practice": ("Has left the practice; remove from the plan", 0.10)}
+    names, probs = list(kinds), np.array([v[1] for v in kinds.values()])
+    rows = []
+    for cycle in range(2):
+        pick = rng.random(len(h)) < 0.04
+        sel = h[pick & h.territory_id.notna().to_numpy()]
+        adj = rng.choice(names, len(sel), p=probs / probs.sum())
+        rows.append(pd.DataFrame({"account_id": sel.id.to_numpy(), "user_id": sel.territory_id.map(terr).to_numpy(),
+                                  "cycle_start": (start + pd.Timedelta(weeks=13 * cycle)).date(),
+                                  "adjustment": adj, "reason": [kinds[a][0] for a in adj]}))
+    return pd.concat(rows, ignore_index=True)
 
 
 def _rep_capacity(rng, design, users: pd.DataFrame) -> pd.DataFrame:
@@ -109,6 +132,7 @@ def generate(seed: int | None = None, scale: float = 1.0, data_dir: Path | None 
     out["iqvia_brick_sales"] = sales.brick_sales(rng, design, world, hist["hcp_stage_weekly"])
     out["procedure_volume"] = sales.procedure_volume(rng, design, world, hist["hcp_stage_weekly"])
     out["rep_capacity"] = _rep_capacity(rng, design, world["users"])
+    out["rep_plan_input"] = _rep_plan_input(np.random.default_rng([seed, 202]), design, world)
     for t in ENGINE_TABLES:
         out[t] = schema.empty(t)
     out["feature_snapshot"] = pd.DataFrame({"account_id": pd.Series(dtype="string"),

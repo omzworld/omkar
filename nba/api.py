@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from nba import author, datacatalog, features, measure, pipeline, proposals, readiness, runner, spec
+from nba import author, data, datacatalog, features, measure, pipeline, plan_view, proposals, readiness, runner, spec, story
 from nba.rules import catalogue, engine, versions
 
 app = FastAPI(title="Next best action engine", version="0.1")
@@ -179,6 +179,47 @@ def author_remove(rule_id: str):
     return {"ok": True}
 
 
+# ------------------------------------------------------------------------------------------- segment & plan
+
+@app.get("/api/plan")
+def get_plan(cycle: int | None = None):
+    """The cycle's segmentation, recommended allocation, rep adjustments and delivery so far."""
+    return out(plan_view.summary(cycle))
+
+
+@app.get("/api/plan/physicians")
+def get_plan_physicians(cycle: int = 1, segment: str | None = None):
+    return out(plan_view.physicians(cycle, segment))
+
+
+# ------------------------------------------------------------------------------------------- doctor and rep view
+
+@app.get("/api/story/doctors")
+def story_doctors():
+    return out(story.showcase_doctors())
+
+
+@app.get("/api/story/doctor/{hcp_id}")
+def story_doctor(hcp_id: str):
+    try:
+        return out(story.doctor(hcp_id))
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.get("/api/story/reps")
+def story_reps():
+    return out(story.showcase_reps())
+
+
+@app.get("/api/story/rep/{user_id}")
+def story_rep(user_id: str, week: int | None = None):
+    try:
+        return out(story.rep(user_id, week))
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+
+
 # ------------------------------------------------------------------------------------------- brick trends
 
 @app.get("/api/bricks/trend")
@@ -236,17 +277,24 @@ def run_week(body: WeekRun):
     r = pipeline.run_week(body.week, dial=body.dial, save=False)
     s = pipeline.summary(r)
     triggers = r.triggers.groupby("rule_id").agg(triggers=("hcp_id", "size"), example=("reason", "first")).reset_index()
-    sent = r.sent.sort_values("final_return", ascending=False)
+    seg = data.read_table("hcp_segment")
+    seg_of = seg.sort_values("cycle").drop_duplicates("account_id", keep="last").set_index("account_id").segment \
+        if len(seg) else pd.Series(dtype=object)
+    r.decisions["segment_name"] = r.decisions.hcp_id.map(seg_of)
+    sent = r.decisions[r.decisions.status.isin(["sent", "substituted"])].sort_values(
+        ["reallocated", "final_return"], ascending=[False, False])
     names = pd.read_parquet(_root() / "account_vod.parquet", columns=["id", "name"]).set_index("id").name
     cols = ["hcp_id", "territory_id", "brick_id", "final_channel", "content_theme", "asset_id", "probability_of_response",
             "chance_tier", "value_of_response", "cost_of_touch", "final_return", "rule_ids", "reason", "status",
-            "not_sent_reason"]
+            "not_sent_reason", "origin", "reallocated", "segment_name"]
     held = r.decisions[(r.decisions.status == "not_sent")].sort_values("expected_return", ascending=False)
+    moved = r.decisions[r.decisions.status.isin(["moved", "blocked"])].sort_values("expected_return")
     return out({"headline": s["headline"], "triggers": triggers, "constraints": s["constraints"],
                 "by_channel": s["by_channel"], "not_sent": s["not_sent"], "by_rule": s["by_rule"],
                 "sent": sent[cols].head(100).assign(name=lambda d: d.hcp_id.map(names)),
                 "held": held[cols + ["verdict", "constraint_id", "constraint_reason"]].head(100)
-                .assign(name=lambda d: d.hcp_id.map(names))})
+                .assign(name=lambda d: d.hcp_id.map(names)),
+                "moved": moved[cols].head(150).assign(name=lambda d: d.hcp_id.map(names))})
 
 
 # ------------------------------------------------------------------------------------------- scene 4: delivery
@@ -386,7 +434,7 @@ def pilot_status():
 
 @app.get("/api/measure")
 def get_measure(fee: float | None = None, margin: float = 70.0, lift: float | None = None,
-                sales: float | None = None, savings: bool = True):
+                sales: float | None = None, savings: bool = False):
     return out(measure.report(fee_per_quarter=fee, margin_pct=margin, lift_override_pts=lift,
                               brand_sales_per_quarter_eur=sales, count_touch_savings=savings))
 

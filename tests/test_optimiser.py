@@ -96,19 +96,39 @@ def test_every_candidate_has_a_verdict_and_every_unsent_one_a_reason(week1):
     assert d.verdict.isin(["allowed", "delayed", "blocked"]).all()
     assert d[d.verdict != "allowed"].constraint_id.notna().all()
     assert d[d.status == "not_sent"].not_sent_reason.notna().all()
-    assert (d[d.status.isin(["sent", "substituted"])].final_return > 0).all()
+    # A swap that displaces a planned touch must be worth more than it; a slot freed by a blocked planned touch is
+    # already budgeted and goes to the best remaining candidate; planned touches go ahead as planned.
+    moved = set(d.candidate_id[d.status == "moved"])
+    swaps = d[(d.status == "sent") & (d.origin != "plan") & d.replaces.isin(moved)]
+    by_id = d.set_index("candidate_id").expected_return
+    assert all(er > by_id[r] for er, r in zip(swaps.final_return, swaps.replaces))
 
 
-def test_capacity_is_never_exceeded(week1, full):
-    from nba.optimiser import capacity
-    slots = capacity(week1.feats.as_of, full)
-    used = week1.sent.resource.value_counts()
-    for key, n in used.items():
-        assert n <= slots.get(key, 0), key
+def test_the_week_never_exceeds_the_plan(week1):
+    """Per rep and channel (per market for marketing email), touches sent never exceed the planned touches due."""
+    d = week1.decisions
+    planned = d[d.origin == "plan"].resource.astype(str).value_counts()
+    sent = d[d.status == "sent"].resource.astype(str).value_counts()
+    for key, n in sent.items():
+        assert n <= planned.get(key, 0), key
 
 
-def test_at_most_one_action_per_physician(week1):
-    assert week1.sent.hcp_id.is_unique
+def test_every_engine_touch_displaces_one_planned_touch(week1):
+    """Budget neutral: each touch the engine adds takes the slot of exactly one planned touch (one it moved, or one
+    a hard block freed), like for like, and no slot is used twice."""
+    d = week1.decisions
+    added = d[(d.status == "sent") & (d.origin != "plan")]
+    moved = d[d.status == "moved"]
+    freed = d[(d.origin == "plan") & (d.status == "blocked")]
+    assert added.replaces.notna().all() and added.replaces.is_unique
+    assert set(moved.candidate_id) <= set(added.replaces)
+    assert set(added.replaces) <= set(moved.candidate_id) | set(freed.candidate_id)
+    by_id = d.set_index("candidate_id")
+    assert all(by_id.at[r, "channel"] == ch for r, ch in zip(added.replaces, added.channel))
+
+
+def test_at_most_one_touch_per_physician_per_channel(week1):
+    assert not week1.sent.duplicated(["hcp_id", "final_channel"]).any()
 
 
 def test_every_output_row_carries_the_audit_columns(week1):

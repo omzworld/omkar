@@ -174,7 +174,7 @@ def consent_growth(con, start, end, weeks: int) -> dict:
 
 def return_model(lift: dict, arm_table: pd.DataFrame, weeks: int, fee_per_quarter: float | None = None,
                  margin_pct: float = 70.0, scale: float = 1.0, lift_override_pts: float | None = None,
-                 count_touch_savings: bool = True, brand_sales_per_quarter_eur: float | None = None) -> dict:
+                 count_touch_savings: bool = False, brand_sales_per_quarter_eur: float | None = None) -> dict:
     """What the measured lift and the touch savings are worth against the fee, per quarter, and the break-even.
     scale multiplies the test territories' baseline to the size of a roll-out (1 = the pilot as run)."""
     a = spec.assumptions()["run_cost"]
@@ -232,6 +232,80 @@ def gates(arm_table: pd.DataFrame, lift: dict, consent: dict, weekly_df: pd.Data
              "passed": bool(v >= target if op == ">=" else v <= target)} for c, name, v, target, op, unit in checks]
 
 
+def spend(con, start, end, arm_table: pd.DataFrame) -> dict:
+    """The budget-neutral check: touches and cost per physician in test against control, overall and by channel."""
+    _touches_view(con, start, end)
+    cost = spec.assumptions()["touch_cost"]
+    t = arm_table.set_index("pilot_arm")
+    # Touches to the same physicians the per-physician figures divide by (active, promotable, not medical-only),
+    # so neither arm is credited or charged for contacts outside that population.
+    ch = con.execute("""select t.pilot_arm, t.channel, count(*) as touches from pilot_touches t
+                        join account_vod a on a.id = t.account_id join hcp_master_opendata m on m.onekey_id = a.onekey_id
+                        where a.account_type = 'hcp' and a.status = 'active' and not m.no_promo_flag
+                          and a.hcp_role <> 'medical_only_contact' group by all""").df()
+    ch = ch.pivot(index="channel", columns="pilot_arm", values="touches").fillna(0)
+    rows = []
+    for c, r in ch.iterrows():
+        tp, cp = r.get("test", 0) / t.loc["test", "physicians"], r.get("control", 0) / t.loc["control", "physicians"]
+        rows.append({"channel": c, "test_per_physician": round(float(tp), 2), "control_per_physician": round(float(cp), 2),
+                     "cost_per_touch_eur": cost.get(c)})
+    per = {a: {"touches": float(sum(ch.loc[c, a] for c in ch.index if a in ch.columns) / t.loc[a, "physicians"]),
+               "cost": float(sum(ch.loc[c, a] * cost.get(c, 0) for c in ch.index if a in ch.columns) / t.loc[a, "physicians"])}
+           for a in ("test", "control")}
+    diff = lambda k: round(100 * (per["test"][k] / per["control"][k] - 1), 1) if per["control"][k] else None  # noqa: E731
+    out = {"test_touches_per_physician": round(per["test"]["touches"], 2),
+           "control_touches_per_physician": round(per["control"]["touches"], 2),
+           "test_cost_per_physician_eur": round(per["test"]["cost"], 1),
+           "control_cost_per_physician_eur": round(per["control"]["cost"], 1),
+           "touches_diff_pct": diff("touches"), "cost_diff_pct": diff("cost"), "by_channel": rows,
+           "tolerance_pct": 5.0}
+    # Budget neutral means the money: spend per physician within the tolerance (touch counts differ with the mix).
+    out["equal"] = out["cost_diff_pct"] is not None and abs(out["cost_diff_pct"]) <= out["tolerance_pct"]
+    # Against the plan: what the test territories were budgeted (last year's touches, pro rata for the weeks run)
+    # and what they spent on the planned channels.
+    cp = data.read_table("call_plan", None)
+    if len(cp):
+        arm = con.execute("select a.id, tv.pilot_arm from account_vod a join territory_vod tv on tv.id = a.territory_id").df()
+        cp = cp.merge(arm, left_on="account_id", right_on="id")
+        cp = cp[cp.pilot_arm == "test"]
+        weeks = (end - start).days / 7
+        cyc = spec.assumptions()["planning"]["cycle_weeks"]
+        per_cycle = cp.groupby("cycle").apply(lambda g: (g.last_year_touches * g.channel.map(cost)).sum(), include_groups=False)
+        budget = sum(per_cycle.get(i + 1, per_cycle.iloc[-1]) * min(max(weeks - i * cyc, 0), cyc) / cyc
+                     for i in range(int(-(-weeks // cyc))))
+        planned_ch = spec.assumptions()["planning"]["channels"]
+        spent = float(sum(r["test_per_physician"] * t.loc["test", "physicians"] * (r["cost_per_touch_eur"] or 0)
+                          for r in rows if r["channel"] in planned_ch))
+        out.update(plan_budget_eur=round(float(budget)), plan_spent_eur=round(spent),
+                   vs_plan_pct=round(100 * (spent / budget - 1), 1) if budget else None)
+    return out
+
+
+def reallocation(data_dir: Path | None = None) -> dict:
+    """What the engine moved: planned touches due, moved, and from which segments to which."""
+    root = Path(data_dir) if data_dir else spec.data_dir()
+    frames = [pd.read_parquet(f, columns=["hcp_id", "channel", "origin", "status"]).assign(week=int(f.parent.name[-2:]))
+              for f in sorted((root / "runs").glob("week_*/decisions.parquet"))]
+    if not frames:
+        return {}
+    d = pd.concat(frames, ignore_index=True)
+    seg = data.read_table("hcp_segment", data_dir)
+    seg_of = seg.sort_values("cycle").drop_duplicates("account_id", keep="last").set_index("account_id").segment \
+        if len(seg) else pd.Series(dtype=object)
+    planned = d[d.origin == "plan"]
+    added = d[(d.origin != "plan") & (d.status == "sent")]
+    moved = planned[planned.status == "moved"]
+    flow = pd.DataFrame({"segment": list(seg_of.reindex(moved.hcp_id).fillna("other")) + list(seg_of.reindex(added.hcp_id).fillna("other")),
+                         "direction": ["out"] * len(moved) + ["in"] * len(added)})
+    net = flow.groupby(["segment", "direction"]).size().unstack(fill_value=0).reindex(columns=["out", "in"], fill_value=0)
+    net["net"] = net["in"] - net["out"]
+    return {"planned_due": int(len(planned)), "delivered_as_planned": int((planned.status == "sent").sum()),
+            "moved": int(len(moved)), "blocked": int((planned.status == "blocked").sum()),
+            "moved_pct": round(100 * len(moved) / max(len(planned), 1), 1),
+            "by_segment": net.reset_index().sort_values("net").to_dict("records"),
+            "by_week": d[d.origin == "plan"].groupby("week").status.value_counts().unstack(fill_value=0).reset_index().to_dict("records")}
+
+
 def report(data_dir: Path | None = None, **return_inputs) -> dict:
     start, end, weeks = _window(data_dir)
     if weeks == 0:
@@ -244,4 +318,5 @@ def report(data_dir: Path | None = None, **return_inputs) -> dict:
     return {"weeks": weeks, "from": f"{start:%d %b %Y}", "to": f"{end - pd.Timedelta(days=1):%d %b %Y}",
             "lift": lift, "arms": arm_table, "monthly_index": monthly_index(con, start), "weekly": w,
             "consent": consent, "gates": gates(arm_table, lift, consent, w),
+            "spend": spend(con, start, end, arm_table), "reallocation": reallocation(data_dir),
             "return_model": return_model(lift, arm_table, weeks, **return_inputs)}
