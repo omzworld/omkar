@@ -160,6 +160,18 @@ rule("engagement_triggers","rules","all",ALL,"opportunity","days_since_last_touc
 # Defend the brick (added with the baseline plan): a brick in sustained decline puts its committed prescribers at risk;
 # reach the ones who have gone quiet, on whichever channel the optimiser finds best, inside the planned budget.
 rule(M,"rules",MV,ALL,"risk","brick_volume_r3m_pct <= -{decline_pct} and brick_r3m_months_declining >= {confirm_months} and brick_units_r3m >= {min_units} and stage in ['experience','loyalty','advocacy'] and days_since_last_response >= {silent_days}","next_best","next_theme","Brick {brick_id} down {brick_volume_r3m_pct}% over 3 months and this {stage} prescriber has not responded in {days_since_last_response} days: defend",dict(decline_pct=5,confirm_months=2,min_units=100,silent_days=42),launch=True,prio=75)
+# Added with the rule studio upgrade (docs/decisions.md): precise follow-ups to engagement signals.
+rule(T,"rules","all",ALL,"opportunity","email_clicks_30d >= 1 and days_since_rep_visit >= {no_visit_days} and tier in ['A','B']","remote_call","clinical_evidence","Clicked an email in the last 30 days and no rep visit in {days_since_rep_visit} days: remote call while interest is fresh",dict(no_visit_days=30),launch=True,prio=65)
+rule(T,"rules","all",ALL,"opportunity","webinar_attended_30d == True and days_since_webinar <= {follow_days}","marketing_email","event_follow_up","Attended the webinar {days_since_webinar} days ago: send the recording and slides",dict(follow_days=3),launch=True,prio=60)
+rule(T,"rules","all",ALL,"risk","stage == 'experience' and days_since_last_response >= {silent_days} and tier in ['A','B']","rep_visit","patient_case","Occasional user, silent for {days_since_last_response} days: find out how the last patients got on",dict(silent_days=42),launch=True,prio=70)
+rule(M,"rules",MV,ALL,"opportunity","stage == 'loyalty' and advocacy_candidate == True","rep_visit","peer_experience","Regular prescriber willing to share experience: invite to present at a local meeting",launch=True,prio=55)
+# Switched on with the rule studio upgrade (docs/decisions.md): the brand-specific and follow-up rules that have a
+# clear signal in the data, so the studio runs the catalogue rather than a small demo subset.
+ON_AT_UPGRADE = {"R035","R036","R038","R040","R042","R044","R047","R048","R049","R050","R078","R084","R085","R086",
+                 "R089","R098","R100","R109","R112","R113","R129","R130"}
+for r in R:
+    if r["id"] in ON_AT_UPGRADE:
+        r["enabled_at_launch"] = True
 fams={}
 for r in R: fams[r['family']]=fams.get(r['family'],0)+1
 launch=sum(1 for r in R if r['enabled_at_launch'])

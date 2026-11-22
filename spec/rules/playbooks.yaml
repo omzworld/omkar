@@ -1,0 +1,111 @@
+# What an action means in practice. A rule's action names a channel and a content theme; the playbook turns that
+# into what the rep or the agency actually does: for an email the sender, template, subject, send window, follow-up
+# and quiet period; for a visit or call the objective, the slide order, the question to ask, the objection handler,
+# the leave-behind and the follow-up.
+#
+# Slide titles, subject lines and questions are ILLUSTRATIVE wording for the pitch. In a live deployment they come
+# from the MLR-approved PromoMats documents (slide numbers and approved subject lines), not from this file.
+
+# The call objective is the next rung of the adoption ladder from where the doctor is now.
+objective_by_stage:
+  curiosity: "Unaware to aware: they recognise the brand and agree to receive material"
+  consideration: "Aware to occasional use: agree one patient type to try it with"
+  experience: "Occasional to regular use: make it the default for that patient type"
+  loyalty: "Keep regular use and widen it: a second patient group or a colleague"
+  advocacy: "Advocate: invite them to share their experience with peers"
+
+# The opening slide matches the stage (what they need to hear first).
+open_slide_by_stage:
+  curiosity: "The patient problem: how common it is and what it costs the practice"
+  consideration: "Why it works: mechanism and the headline result"
+  experience: "Getting the dose right: titration and what to tell patients"
+  loyalty: "What colleagues see in practice: real-world results"
+  advocacy: "Your experience, shared: peer programme"
+
+themes:
+  efficacy:            {slide: "Headline efficacy result against standard care", subject: "The result your patients notice first", ask: "Which patients are not getting relief today?"}
+  clinical_evidence:   {slide: "Pivotal trial: design, endpoints and outcome", subject: "The trial behind the recommendation, in two minutes", ask: "What evidence would you need to change first-line choice?"}
+  real_world_evidence: {slide: "Real-world outcomes in routine practice", subject: "What happened in routine practice, not just in trials", ask: "Does what you see match these results?"}
+  patient_case:        {slide: "A patient like yours: case walk-through", subject: "A patient case like the ones you see", ask: "Do you have a patient like this right now?"}
+  dosing:              {slide: "Dosing and titration in three steps", subject: "Dosing in three steps", ask: "Where do patients get the dose wrong?"}
+  dosing_nursing:      {slide: "Preparation dosing for the nursing team", subject: "Preparation guide for your nursing team", ask: "Who explains the preparation to patients in your unit?"}
+  safety:              {slide: "Safety and tolerability profile", subject: "Safety profile at a glance", ask: "What safety question do patients ask you most?"}
+  economic_evidence:   {slide: "Cost per patient treated and budget impact", subject: "What it costs per patient treated", ask: "How is prescribing budget reviewed in your practice?"}
+  access:              {slide: "Formulary status and how to prescribe locally", subject: "It is on your local formulary: how to prescribe", ask: "Is anything stopping you prescribing it locally?"}
+  peer_experience:     {slide: "How colleagues use it: peer experience", subject: "How colleagues near you use it", ask: "Would you be open to speaking with a colleague who uses it?"}
+  paediatric:          {slide: "Children: dosing by age and parent guidance", subject: "Treating children: dosing by age", ask: "How do you advise parents today?"}
+  chronic_constipation_elderly: {slide: "Older patients and care homes: what to watch", subject: "Older patients and care homes", ask: "How are care-home residents reviewed?"}
+  pharmacy_support:    {slide: "Pharmacy support pack and counter guidance", subject: "Support for your pharmacy team", ask: "What do customers ask at the counter?"}
+  guideline_update:    {slide: "What the guideline update changes", subject: "The guideline changed: what it means for you", ask: "Has your practice updated its protocol yet?"}
+  introduction:        {slide: "Who we are and how we can help", subject: "An introduction, and how we can help", ask: "May we send you material by email?"}
+  first_contact:       {slide: "Who we are and how we can help", subject: "Welcome: three things worth knowing", ask: "What topic would be most useful to you?"}
+  cleansing_quality:   {slide: "Cleansing quality and repeat-procedure rates", subject: "Fewer repeat procedures: the cleansing data", ask: "How is preparation quality tracked in the unit?"}
+  low_volume_prep:     {slide: "Low-volume preparation: patient completion", subject: "Low-volume preparation patients finish", ask: "What share of patients struggle to finish today?"}
+  patient_instructions: {slide: "Patient instruction pack", subject: "A patient instruction pack for your unit", ask: "What do patients find hardest to follow?"}
+  capacity_planning:   {slide: "Capacity planning for screening growth", subject: "Planning for more screening lists", ask: "How many extra lists are planned this year?"}
+  referral_pathway:    {slide: "Referral and preparation pathway", subject: "Referring for colonoscopy: the preparation pathway", ask: "What happens between referral and procedure?"}
+  hepatic_encephalopathy_evidence: {slide: "Preventing recurrence of overt hepatic encephalopathy", subject: "Preventing recurrence: the evidence", ask: "How are patients followed after their first episode?"}
+  recurrence_prevention: {slide: "Recurrence and readmission: the data", subject: "Keeping patients out of hospital", ask: "How many of your patients are readmitted?"}
+  discharge_pathway:   {slide: "Discharge pathway support", subject: "Supporting your discharge pathway", ask: "Who owns the discharge plan for these patients?"}
+  event_invite:        {slide: "", subject: "You're invited: {brand} evening meeting", ask: ""}
+  event_follow_up:     {slide: "", subject: "The slides and recording from the session", ask: ""}
+  reason_check:        {slide: "", subject: "", ask: "How would you prefer to hear from us, and what has not been useful?"}
+
+# Supporting slide and objection handler for the barrier recorded in the doctor's profile.
+barriers:
+  price:                 {theme: economic_evidence, objection: "If cost comes up: show cost per patient treated, not price per pack."}
+  competitor_preference: {theme: clinical_evidence, objection: "If they prefer the competitor: ask which patients it does not work for, then show the head-to-head data."}
+  low_belief:            {theme: real_world_evidence, objection: "If they doubt it works: show routine-practice results from similar practices."}
+  access:                {theme: access, objection: "If access is the issue: show the local formulary status and how to prescribe."}
+
+# What happens after each channel, unless a rule says otherwise.
+channels:
+  marketing_email:
+    sender: "Brand team (agency send, Veeva approved email template)"
+    follow_up:
+      - "Opened, not clicked after 5 days: one resend with the alternative subject line"
+      - "Clicked: rep remote call within 10 working days, same theme"
+      - "No open after 2 sends: stop email, hand to the rep"
+    quiet_days: 7
+  rep_email:
+    sender: "The rep, from Veeva Approved Email (the doctor knows the sender)"
+    follow_up:
+      - "Opened, not clicked after 5 days: rep mentions it at the next contact"
+      - "Clicked: book a visit or remote call within 10 working days"
+      - "No open after 2 sends: switch to a visit"
+    quiet_days: 7
+  rep_visit:
+    after:
+      - "Within 48 hours: rep email with the material shown"
+      - "Record in Veeva: outcome, next step, and update the adoption ladders if they changed"
+  remote_call:
+    after:
+      - "Within 48 hours: rep email with the material discussed"
+      - "Record in Veeva: outcome and next step"
+  webinar:
+    sender: "Brand team"
+    follow_up:
+      - "Invitation now, reminder 2 days before"
+      - "Attended: recording and slides within 3 days, then a rep visit within 10 working days"
+      - "Registered but missed: recording within 3 days"
+    quiet_days: 7
+  kam_visit:
+    after: ["Account plan updated in Veeva within 48 hours", "Agree the next meeting and who attends"]
+  kam_brief:
+    after: ["Account plan updated in Veeva within 48 hours", "Agree the next meeting and who attends"]
+
+# Rule-specific playbook lines that replace the defaults.
+rules:
+  R032: {objective: "Turn opens into a conversation: they read but did not act", follow_up: ["Clicked: book a 15-minute remote call within 10 working days", "Still no click: visit with the patient case"]}
+  R033: {objective: "Convert webinar interest into a first prescription", ask: "What from the webinar would you try first, and with which patient?"}
+  R034: {follow_up: ["Recording sent within 3 days of the event", "Watched: rep email offering a call", "Not watched in 14 days: no further action this month"]}
+  R039: {objective: "Re-establish contact with a high-value doctor who has gone quiet", ask: "What has changed since we last spoke?"}
+  R041: {objective: "Find out why they stopped responding and how they want to hear from us", after: ["Record the preferred channel in Veeva", "Pause digital until the rep has spoken to them"]}
+  R075: {objective: "Defend the brick: find out what changed and win back the patient type being lost", ask: "Have you changed what you prescribe first for these patients in the last three months?"}
+  R078: {objective: "Respond to competitor growth with the comparative evidence"}
+  R083: {objective: "Introduce the brand and capture email consent", after: ["Record email consent in Veeva if given", "If consent given: start the email sequence next week"]}
+  R136: {objective: "Defend a regular prescriber in a declining brick before they switch", ask: "Is anything making you reconsider it for these patients?"}
+  R137: {objective: "Follow up an email click while interest is fresh", ask: "You looked at the material we sent: what would you want to know next?"}
+  R138: {follow_up: ["Recording and slides within 3 days", "Rep visit within 10 working days to agree a first patient"]}
+  R139: {objective: "Find out why an occasional user has gone quiet and whether a patient did not respond", ask: "How did the last patients you tried it with get on?"}
+  R140: {objective: "Invite a loyal prescriber to share their experience with peers", ask: "Would you be willing to present a case at a local meeting?"}

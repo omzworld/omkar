@@ -5,6 +5,8 @@ import { motion } from "motion/react";
 import { api, num, words } from "../api";
 import { Badge, Button, Card, Message, Stat } from "../ui";
 import { LADDER_LABEL } from "../ladder.js";
+import { IncentiveCard } from "../playbook.jsx";
+import TalkTrack from "./TalkTrack.jsx";
 
 const FILTERS = [["actions", "This week's actions"], ["engine", "Changes from the engine"], ["behind", "Behind plan"],
   ["headroom", "Headroom"], ["profile", "Profile to update"], ["all", "Everyone"]];
@@ -18,12 +20,14 @@ export default function MyTerritory({ pilot, go }) {
   const [err, setErr] = useState(null);
   const [filter, setFilter] = useState("actions");
   const [open, setOpen] = useState(null);
+  const [tt, setTt] = useState(null);
   useEffect(() => { api("/territory/reps").then((r) => { setReps(r); setUser((u) => u || (r.find((x) => x.rep === "DE-REP24") || r[0])?.rep); }); }, []);
   useEffect(() => {
     if (!user || !done) return;
     setErr(null);
     api(`/territory/${user}${week ? `?week=${week}` : ""}`).then((x) => { setP(x); if (!week) setWeek(x.week); }).catch((e) => setErr(e.message));
   }, [user, week, done]);
+  useEffect(() => { if (user && week) api(`/delivery/${week}/user/${user}`).then(setTt).catch(() => setTt(null)); }, [user, week]);
 
   const rows = useMemo(() => {
     if (!p) return [];
@@ -105,11 +109,12 @@ export default function MyTerritory({ pilot, go }) {
             </table>
           </div>
         </Card>
-        {p.talk_track && (
-          <Card title="Monday talk track" subtitle="The same week, written as the rep reads it.">
-            <div className="whitespace-pre-line text-sm leading-relaxed text-[var(--ink-2)]">{p.talk_track}</div>
+        <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
+          <Card title="Monday talk track" subtitle="The same week as the rep reads it: one card per doctor, with what to show, ask and leave.">
+            {tt?.talk_track ? <TalkTrack tt={tt.talk_track} playbooks={tt.playbooks} /> : <p className="text-sm text-[var(--muted)]">No talk track this week.</p>}
           </Card>
-        )}
+          <div><IncentiveCard rep={user} week={week} /></div>
+        </div>
       </>)}
     </div>
   );

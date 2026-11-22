@@ -606,7 +606,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: portal_visits_30d >= 2
   action:
     channel: marketing_email
@@ -623,7 +623,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: portal_content_viewed == 'dosing'
   action:
     channel: rep_email
@@ -657,7 +657,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: event_upcoming_days <= 21 and event_registered == False and tier in ['A','B']
   action:
     channel: marketing_email
@@ -692,7 +692,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: risk
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: days_since_last_touch >= {no_touch_days_b} and tier == 'B'
   action:
     channel: rep_email
@@ -727,7 +727,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: risk
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: stage_regressed == True
   action:
     channel: rep_visit
@@ -761,7 +761,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: new_in_target == True and tier == 'A'
   action:
     channel: rep_visit
@@ -814,7 +814,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: rep_visit_completed_days_ago <= 3 and rep_visit_next_step == 'send_material'
   action:
     channel: rep_email
@@ -831,7 +831,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: survey_response_30d == True and survey_interest == 'access'
   action:
     channel: marketing_email
@@ -848,7 +848,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: risk
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: unsubscribe_30d == True
   action:
     channel: rep_visit
@@ -865,7 +865,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: medical_inquiry_30d == True
   action:
     channel: rep_email
@@ -1363,7 +1363,7 @@ rules:
   brand: Movicol
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: brick_competitor_share_r3m_change >= {comp_pct} and brick_share_months_rising >= {confirm_months} and brick_units_r3m
     >= {min_units}
   action:
@@ -1471,7 +1471,7 @@ rules:
   brand: Movicol
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: care_home_prescriber == True
   action:
     channel: rep_email
@@ -1488,7 +1488,7 @@ rules:
   brand: Movicol
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: guideline_update_days_ago <= 30 and specialty in ['gp','gastroenterology']
   action:
     channel: marketing_email
@@ -1506,7 +1506,7 @@ rules:
   markets:
   - UK
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: formulary_status_changed == 'added' and days_since_formulary_change <= 30
   action:
     channel: rep_visit
@@ -1558,7 +1558,7 @@ rules:
   brand: Movicol
   markets: *id001
   trigger_type: risk
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: stage == 'loyalty' and brick_volume_r3m_pct <= -{loyal_decline_pct} and brick_r3m_months_declining >= {confirm_months}
     and brick_units_r3m >= {min_units}
   action:
@@ -1718,7 +1718,7 @@ rules:
   brand: Plenvu_Moviprep
   markets: *id001
   trigger_type: risk
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: account_type == 'endoscopy_unit' and inadequate_prep_rate_reported >= {prep_fail_pct}
   action:
     channel: kam_visit
@@ -1753,7 +1753,7 @@ rules:
   brand: Plenvu_Moviprep
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: specialty == 'gp' and referral_volume_qoq_pct >= {ref_pct}
   action:
     channel: marketing_email
@@ -1911,7 +1911,7 @@ rules:
   brand: Xifaxan
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: specialty == 'gp' and referral_to_hepatology_flag == True
   action:
     channel: marketing_email
@@ -1962,7 +1962,7 @@ rules:
   brand: Xifaxan
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: event_type == 'hepatology_congress' and event_attended_days_ago <= 14
   action:
     channel: rep_email
@@ -1979,7 +1979,7 @@ rules:
   brand: Xifaxan
   markets: *id001
   trigger_type: risk
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: readmission_signal == True
   action:
     channel: rep_visit
@@ -2251,7 +2251,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: event_upcoming_days <= 14 and event_registered == True
   action:
     channel: rep_email
@@ -2268,7 +2268,7 @@ rules:
   brand: all
   markets: *id001
   trigger_type: opportunity
-  enabled_at_launch: false
+  enabled_at_launch: true
   condition: event_attended_days_ago <= 7
   action:
     channel: marketing_email
@@ -2389,5 +2389,77 @@ rules:
     confirm_months: 2
     min_units: 100
     silent_days: 42
+  owner: brand
+  notes: ''
+- id: R137
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: email_clicks_30d >= 1 and days_since_rep_visit >= {no_visit_days} and tier in ['A','B']
+  action:
+    channel: remote_call
+    content_theme: clinical_evidence
+    timing: this_week
+  priority: 65
+  reason_template: 'Clicked an email in the last 30 days and no rep visit in {days_since_rep_visit} days: remote call while
+    interest is fresh'
+  parameters:
+    no_visit_days: 30
+  owner: brand
+  notes: ''
+- id: R138
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: webinar_attended_30d == True and days_since_webinar <= {follow_days}
+  action:
+    channel: marketing_email
+    content_theme: event_follow_up
+    timing: this_week
+  priority: 60
+  reason_template: 'Attended the webinar {days_since_webinar} days ago: send the recording and slides'
+  parameters:
+    follow_days: 3
+  owner: brand
+  notes: ''
+- id: R139
+  family: engagement_triggers
+  engine: rules
+  brand: all
+  markets: *id001
+  trigger_type: risk
+  enabled_at_launch: true
+  condition: stage == 'experience' and days_since_last_response >= {silent_days} and tier in ['A','B']
+  action:
+    channel: rep_visit
+    content_theme: patient_case
+    timing: this_week
+  priority: 70
+  reason_template: 'Occasional user, silent for {days_since_last_response} days: find out how the last patients got on'
+  parameters:
+    silent_days: 42
+  owner: brand
+  notes: ''
+- id: R140
+  family: movicol
+  engine: rules
+  brand: Movicol
+  markets: *id001
+  trigger_type: opportunity
+  enabled_at_launch: true
+  condition: stage == 'loyalty' and advocacy_candidate == True
+  action:
+    channel: rep_visit
+    content_theme: peer_experience
+    timing: this_week
+  priority: 55
+  reason_template: 'Regular prescriber willing to share experience: invite to present at a local meeting'
+  parameters: {}
   owner: brand
   notes: ''

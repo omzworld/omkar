@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { api, eur, num, words } from "../api";
 import { Badge, Card, Field, inputClass, Message, Status, Table } from "../ui";
+import { IncentiveCard } from "../playbook.jsx";
+import TalkTrack from "./TalkTrack.jsx";
 
 export default function Delivery({ pilot }) {
   const done = pilot?.completed_weeks ?? 0;
-  const [week, setWeek] = useState(1);
+  const [week, setWeek] = useState(done || 1);
+  useEffect(() => { if (done) setWeek((w) => (w === 1 ? done : w)); }, [done]);
   const [d, setD] = useState(null);
   const [user, setUser] = useState(null);
   const [u, setU] = useState(null);
@@ -55,25 +58,19 @@ export default function Delivery({ pilot }) {
       {err && <Message tone="bad">{err}</Message>}
 
       {tab === "rep" && d && (
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Card title="Talk track" subtitle="What the rep reads on Monday morning, built from the data."
-            actions={<div className="w-56"><select className={inputClass} value={user || ""} onChange={(e) => setUser(e.target.value)} aria-label="Rep">
-              {d.reps_with_briefs.map((b) => <option key={b.user_id} value={b.user_id}>{b.user_id} ({b.territory_id})</option>)}
-            </select></div>}>
-            {u?.talk_track ? (<>
-              <div className="mb-3 flex flex-wrap gap-2">
-                <Badge>{u.talk_track.word_count} words</Badge>
-                <Badge tone={u.talk_track.grounding_check_passed ? "good" : "bad"}>
-                  {u.talk_track.grounding_check_passed ? "✓ every number checked against the data" : "✕ grounding check failed"}
-                </Badge>
-                <Badge>{u.talk_track.model_name === "template" ? "written from a template" : `written by ${u.talk_track.model_name}`}</Badge>
-              </div>
-              <div className="space-y-3 whitespace-pre-line text-sm leading-relaxed">{u.talk_track.prose}</div>
-            </>) : <p className="text-sm text-[var(--muted)]">No talk track for this rep this week.</p>}
-          </Card>
+        <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
+            <Card title="Talk track" subtitle="What the rep reads on Monday morning, built from the data."
+              actions={<div className="w-56"><select className={inputClass} value={user || ""} onChange={(e) => setUser(e.target.value)} aria-label="Rep">
+                {d.reps_with_briefs.map((b) => <option key={b.user_id} value={b.user_id}>{b.user_id} ({b.territory_id})</option>)}
+              </select></div>}>
+              {u?.talk_track ? <TalkTrack tt={u.talk_track} playbooks={u.playbooks} /> : <p className="text-sm text-[var(--muted)]">No talk track for this rep this week.</p>}
+            </Card>
+            <div className="space-y-6">{user && <IncentiveCard rep={user} week={week} />}</div>
+          </div>
           <Card title="Veeva CRM suggestion records" subtitle="Validated against the suggestion schema before they are written.">
             {u?.payloads?.length ? (
-              <pre className="max-h-[40rem] overflow-auto rounded-lg bg-[var(--chip)] p-3 text-xs leading-relaxed">{JSON.stringify(u.payloads, null, 2)}</pre>
+              <pre className="max-h-[28rem] overflow-auto rounded-lg bg-[var(--chip)] p-3 text-xs leading-relaxed">{JSON.stringify(u.payloads, null, 2)}</pre>
             ) : <p className="text-sm text-[var(--muted)]">No suggestions for this rep this week.</p>}
           </Card>
         </div>

@@ -69,3 +69,14 @@ planning:                    # added during the build: the baseline cycle plan a
   swap_margin_eur: 5         # a swap must beat the planned touch it replaces by at least this much expected return
   must_see_visits: 3         # rep adjustment "must see": at least this many visits a quarter
   potential_source: computed # potential band from the engine's score (computed) or the brand's ZS classification (zs)
+
+incentive:                   # added with the rule studio upgrade: a SIMULATED rep incentive tracker (illustrative)
+  target_bonus_per_quarter_eur: 3000
+  weights: {plan: 0.4, sales: 0.4, follow_through: 0.2}
+  sales_growth_target_pct: 12.0    # Movicol units in the rep's bricks, last 3 completed months against a year before
+  sales_points_per_pct: 4          # achievement = 100 + 4 x (growth - target), so each point over target adds 4
+  follow_through_target_pct: 60    # suggestions acted on, of those answered this quarter
+  threshold_pct: 75                # below this overall achievement nothing is paid
+  payout_at_threshold_pct: 50
+  cap_pct: 125                     # achievement above this pays no more
+  payout_at_cap_pct: 150

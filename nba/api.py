@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from nba import attainment, author, data, datacatalog, features, measure, pipeline, plan_view, proposals, readiness, runner, spec, story, territory
+from nba import attainment, author, author_parse, data, incentive, playbook, rule_summary, datacatalog, features, measure, pipeline, plan_view, proposals, readiness, runner, spec, story, territory
 from nba.rules import catalogue, engine, versions
 
 app = FastAPI(title="Next best action engine", version="0.1")
@@ -77,13 +77,40 @@ def get_rules():
     return [_rule_json(r, overrides, paused) for r in catalogue.load() if r.raises_triggers]
 
 
+@app.get("/api/rules/summary")
+def get_rule_summary():
+    return out(rule_summary.summary())
+
+
 @app.get("/api/rules/{rule_id}")
 def get_rule(rule_id: str):
     r = catalogue.by_id().get(rule_id)
     if r is None:
         raise HTTPException(404, f"No rule {rule_id}")
     return {**_rule_json(r, versions.current_overrides(), versions.paused()),
-            "history": versions.history().get(rule_id, [])}
+            "history": versions.history().get(rule_id, []),
+            "playbook": playbook.generic(r.id, r.channel, r.content_theme), "example": _playbook_example(r)}
+
+
+def _playbook_example(r):
+    """The playbook filled in for one doctor the rule acted on (or picked out) in the latest week."""
+    week = runner.completed_weeks()
+    if not week or not r.raises_triggers:
+        return None
+    dec = pd.read_parquet(_week_dir(week) / "decisions.parquet")
+    mine = dec[dec.rule_ids.astype(str).str.split(",").map(lambda x: r.id in x)]
+    if mine.empty:
+        return None
+    sent = mine[mine.status == "sent"]
+    d = (sent if len(sent) else mine).sort_values(["hcp_id", "final_channel"], na_position="last").iloc[0]
+    channel = d.final_channel if isinstance(d.final_channel, str) else d.channel
+    names = pd.read_parquet(_root() / "account_vod.parquet", columns=["id", "name"]).set_index("id").name
+    try:
+        pb = playbook.for_doctor(week, d.hcp_id, channel, d.content_theme, r.id, d.asset_id if isinstance(d.asset_id, str) else None)
+    except KeyError:
+        return None
+    return {"week": week, "hcp_id": d.hcp_id, "name": names.get(d.hcp_id, d.hcp_id), "status": d.status,
+            "reason": d.reason, "playbook": pb}
 
 
 def _snapshot(week: int) -> features.Features:
@@ -147,6 +174,21 @@ class Draft(BaseModel):
 @app.get("/api/author/options")
 def author_options():
     return out(author.options())
+
+
+class Sentence(BaseModel):
+    text: str
+
+
+@app.get("/api/author/examples")
+def author_examples():
+    return author_parse.EXAMPLES
+
+
+@app.post("/api/author/parse")
+def author_parse_text(body: Sentence):
+    p = author_parse.parse(body.text)
+    return out({**p, **author.validate(p["form"])})
 
 
 @app.post("/api/author/check")
@@ -351,7 +393,39 @@ def delivery_user(week: int, user_id: str):
             "talk_track": None if brief is None else {"prose": brief.prose, "word_count": int(brief.word_count),
                                                       "grounding_check_passed": bool(brief.grounding_check_passed),
                                                       "structured": json.loads(brief.structured_brief),
-                                                      "model_name": brief.model_name}}
+                                                      "model_name": brief.model_name},
+            "playbooks": {} if brief is None else _suggestion_playbooks(week, user_id, json.loads(brief.structured_brief))}
+
+
+@app.get("/api/incentive/{user_id}")
+def get_incentive(user_id: str, week: int | None = None):
+    try:
+        return out(incentive.tracker(user_id, week))
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+
+
+def _suggestion_playbooks(week: int, user_id: str, structured: dict) -> dict:
+    """The playbook for each suggestion in a talk track, keyed by suggestion id."""
+    sug = pd.read_parquet(_root() / "suggestion_vod.parquet").set_index("id")
+    dec = pd.read_parquet(_week_dir(week) / "decisions.parquet")
+    dec = dec[dec.status == "sent"]
+    res = {}
+    for item in structured.get("suggestions", []):
+        sid = item.get("suggestion_id")
+        if sid not in sug.index:
+            continue
+        s = sug.loc[sid]
+        d = dec[(dec.hcp_id == s.account_id) & (dec.final_channel == s.suggested_channel)]
+        if d.empty:
+            continue
+        d = d.iloc[0]
+        try:
+            res[sid] = playbook.for_doctor(week, s.account_id, s.suggested_channel, d.content_theme, d.rule_id,
+                                           d.asset_id if isinstance(d.asset_id, str) else None)
+        except KeyError:
+            continue
+    return res
 
 
 @app.get("/api/delivery/{week}/accounts")

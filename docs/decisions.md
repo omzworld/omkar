@@ -330,3 +330,45 @@ Open items to settle before the steps that need them:
    - Journey stages are shown in the brand's ladder words: curiosity = unaware, consideration = aware, experience = occasional use, loyalty = regular use, advocacy = advocate.
    - `planning.potential_source` chooses between the computed potential (default) and ZS. Segment & plan shows how far they agree (54% on seed 2026).
    - Concern-based content is supporting material only; the lead content stays stage-matched, because that is what the learned odds show moves doctors.
+
+## Rule studio upgrade (summary first, plain words, 54 trigger rules with playbooks, talk-track cards, incentive)
+
+- **Summary first.** `nba/rule_summary.py` and `/api/rules/summary` count rules by type (risks, opportunities,
+  guardrails, cadence, channel choice, content order, capacity and feedback) and report what each rule did in the
+  last four weeks:
+  - risks and opportunities: doctors picked out, and doctors acted on (moved into the plan)
+  - guardrails and cadence: actions blocked or delayed
+  - The studio now lists the whole catalogue grouped by family, with an expandable detail for each rule.
+- **Plain words.** `nba/author_parse.py` is a phrase parser with no language model; `author.parse` had been
+  deferred for lack of a key.
+  - It turns a sentence into the rule form; `author.validate` then lists what is missing.
+  - The five spec examples in `spec/authoring/examples.md` are tests, and so are eight ready-made prompts shown as chips.
+  - When a model key exists, the parser stays as the fallback and the output is the same form.
+- **More rules switched on.**
+  - 22 catalogue rules switched on, plus 4 new rules (R137 to R140):
+    - R137: email click → remote call
+    - R138: webinar recording within 3 days
+    - R139: an occasional user gone quiet
+    - R140: a loyal prescriber invited to share their experience
+  - 54 trigger rules on (was 28); 90 of 140 rules on overall.
+  - The source remains `spec/rules/gen_rules.py`.
+  - Seed 2026: lift +3.3 points (was +2.5). Spend −5.1% against control (was −5.6%); 1.8% under the plan budget.
+- **Playbooks.** `spec/rules/playbooks.yaml` and `nba/playbook.py` turn "channel + theme" into a precise action:
+  - email: sender, approved template, subject line, send window, follow-up steps, 7-day quiet period. The send
+    window is learned from the doctor's own opens (weekday and part of day, 3+ opens), else their market and
+    specialty, else the market default.
+  - visit or call:
+    - objective: the next rung of the adoption ladder
+    - slide order: stage opener, then the theme, then a slide for the profile's barrier
+    - the question to ask and the objection handler
+    - leave-behind: a sample only for Movicol, prescribers and under the 4-a-year limit
+    - follow-up within 48 hours, and a profile refresh if it is over a year old
+  - Slide titles and subject lines are illustrative until they come from the MLR-approved documents.
+- **Talk track as cards.** Last week at a glance; one card per doctor (why now, what to show, ask, objection,
+  leave-behind, then); the bricks; and why these were chosen. The prose version is one click away, and the
+  grounding check is unchanged.
+- **Simulated incentive tracker.** `nba/incentive.py`, with weights and targets under `incentive` in the assumptions.
+  - Measures: planned contacts done (40%), Movicol growth in the rep's bricks against a 12% target (40%), and
+    suggestions acted on (20%).
+  - Payout: nothing below 75% achievement, 100% at 100% achievement, capped at 150%.
+  - It also shows the rep's rank in their market and what would move the payout. Not Norgine's real scheme.

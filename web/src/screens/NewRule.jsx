@@ -68,6 +68,8 @@ export default function NewRule({ onClose, onApproved }) {
       <Card title="Write a new rule" subtitle={`Pick the conditions from the ${opt.columns.length} columns the engine builds every week. Every number becomes a named setting you can change later. It will be saved as ${opt.next_id}.`}
         actions={<div className="flex gap-2"><Button kind="secondary" onClick={() => setForm(EXAMPLE)}>Start from an example</Button><Button kind="secondary" onClick={onClose}>Close</Button></div>}>
 
+        <PlainWords onParsed={(f) => setForm({ ...EMPTY, ...f })} />
+
         <Step n="1" title="Who it is for">
           <div className="grid gap-4 md:grid-cols-3">
             <Field label="Brand"><select className={ring(inputClass, isMissing("brand"))} value={form.brand} onChange={(e) => set("brand", e.target.value)}>
@@ -271,6 +273,48 @@ function Verdicts({ v }) {
         {segs.map(([l, n, c], i) => <motion.div key={l} style={{ background: c }} initial={{ width: 0 }} animate={{ width: `${(100 * (n || 0)) / total}%` }} transition={{ delay: i * 0.1, duration: 0.7 }} />)}
       </div>
       <div className="mt-2 flex flex-wrap gap-4 text-sm">{segs.map(([l, n, c]) => <span key={l} className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: c }} />{l} <strong className="tabular">{num(n || 0)}</strong></span>)}</div>
+    </div>
+  );
+}
+
+// Describe the rule in plain words (or pick a ready-made prompt); the parser fills the form below, and what it could
+// not work out is highlighted there as missing.
+function PlainWords({ onParsed }) {
+  const [examples, setExamples] = useState([]);
+  const [text, setText] = useState("");
+  const [res, setRes] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { api("/author/examples").then(setExamples).catch(() => {}); }, []);
+  const run = async (t) => {
+    const sentence = (t ?? text).trim();
+    if (!sentence) return;
+    setText(sentence); setBusy(true);
+    try { const r = await api("/author/parse", { text: sentence }); setRes(r); onParsed(r.form); } catch { setRes(null); }
+    setBusy(false);
+  };
+  return (
+    <div className="mb-6 rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4">
+      <div className="text-sm font-medium">Describe it in plain words</div>
+      <p className="mt-0.5 text-xs text-[var(--ink-2)]">Type a sentence or click an example. The form below fills itself in; anything missing is highlighted for you to complete.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {examples.map((e) => (
+          <button key={e} type="button" onClick={() => run(e)} title={e}
+            className="btn-pill max-w-full truncate border border-[var(--axis)] bg-[var(--surface)] px-3 py-1.5 text-left text-xs text-[var(--ink-2)] hover:border-[var(--accent)] hover:text-[var(--ink)]" style={{ maxWidth: "26rem" }}>{e}</button>
+        ))}
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+        <textarea rows={2} className={inputClass} value={text} onChange={(e) => setText(e.target.value)}
+          placeholder="e.g. If a Movicol brick drops more than 8% and the GP has not seen a rep in two months, send a rep visit with the efficacy asset" />
+        <Button onClick={() => run()} disabled={busy || !text.trim()}>Fill the form</Button>
+      </div>
+      {res && (
+        <div className="mt-3 space-y-1 text-xs">
+          {res.recognised.length > 0 && <div><span className="text-[var(--ink-2)]">Understood: </span>{res.recognised.map((r) => <span key={r} className="mr-1 inline-block rounded bg-[var(--surface)] px-1.5 py-0.5">{r}</span>)}</div>}
+          {res.condition_words && <div><span className="text-[var(--ink-2)]">Condition: </span>{res.condition_words}</div>}
+          {res.unsupported.length > 0 && <div className="text-[var(--warn)]">No data for this yet: {res.unsupported.join(", ")}</div>}
+          {res.missing.length > 0 ? <div className="text-[var(--warn)]">Still needed: {res.missing.join(", ")}</div> : <div className="text-[var(--good-ink)]">Complete: run the quick test below, then approve.</div>}
+        </div>
+      )}
     </div>
   );
 }
