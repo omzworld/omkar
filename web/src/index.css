@@ -34,19 +34,20 @@
   color-scheme: dark;
 }
 
-/* Light theme: the Genpact brand palette. Morning White and Sunrise Cream surfaces, Midnight Black text,
+/* Light theme: the Genpact brand palette. Plain white page and cards with neutral greys; Sunrise Cream only for
+   selected and highlighted elements (--accent-soft), Midnight Black text,
    Sunset Orange as the working colour (fills, bars, the test series), Genpact Coral for labels and the
    control series. Orange is too light for small text on white, so text in the accent colour uses a deeper
    shade of it (rule further down). */
 :root[data-theme="light"] {
-  --page: #faf7f2;
+  --page: #ffffff;
   --surface: #ffffff;
-  --raised: #fff8ee;
+  --raised: #f7f7f8;                     /* neutral: table headers, inputs */
   --ink: #181c23;                        /* Midnight Black */
-  --ink-2: #464a46;
+  --ink-2: #474a52;
   --muted: #6d706b;                      /* First Light 03 */
-  --line: #ebe5da;
-  --axis: #d0cfc8;                       /* Med Gray */
+  --line: #e6e7ea;
+  --axis: #d3d5da;
   --accent: #ffad28;                     /* Sunset Orange */
   --accent-2: #e8424c;                   /* Genpact Coral, a shade deeper so labels read on white */
   --accent-3: #c26b00;
@@ -56,18 +57,18 @@
   --good-ink: #12784f;
   --warn: #b5650a;
   --bad: #e5404a;
-  --chip: #f5efe5;
+  --chip: #f3f4f6;
   --accent-soft: #fff2df;                /* Sunrise Cream */
   --on-accent: #181c23;
-  --well: rgb(24 28 35 / 0.035);
+  --well: #f8f8f9;
   --brand-orange: #ffad28;
   --glow: 0 10px 40px -12px rgb(255 173 40 / 0.55);
   color-scheme: light;
 }
 :root[data-theme="light"] [class*="text-[var(--accent)]"] { color: #a35f00; }
 :root[data-theme="light"] .glass { box-shadow: 0 1px 2px rgb(24 28 35 / 0.04); }
-:root[data-theme="light"] .aurora.a1 { background: rgb(255 173 40 / 0.16); }
-:root[data-theme="light"] .aurora.a2 { background: rgb(255 79 89 / 0.06); }
+:root[data-theme="light"] .aurora { display: none; }  /* plain white page: no tinted glow */
+
 
 body {
   background: var(--page);

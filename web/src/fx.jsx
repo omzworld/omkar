@@ -29,7 +29,7 @@ export function Tilt({ children, className = "", max = 4, as = "div", ...rest })
   return (
     <M
       {...rest}
-      className={`relative ${className}`}
+      className={`group/tilt relative ${className}`}
       style={{ rotateX, rotateY, transformPerspective: 900, transformStyle: "preserve-3d", ...(rest.style || {}) }}
       whileHover={{ scale: 1.01, y: -2 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
@@ -40,7 +40,7 @@ export function Tilt({ children, className = "", max = 4, as = "div", ...rest })
       }}
       onMouseLeave={() => { x.set(0.5); y.set(0.5); }}
     >
-      <motion.span aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit]" style={{ background: light }} />
+      <motion.span aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover/tilt:opacity-100" style={{ background: light }} />
       {children}
     </M>
   );
