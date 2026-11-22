@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { api, eur, num, pct, words } from "../api";
 import { Badge, Button, Card, Message, Stat, Table } from "../ui";
+import { BAND_LADDER } from "../ladder.js";
 
 const BANDS = ["high", "medium", "low"];
 const ADOPT = ["early", "building", "established"];
@@ -87,7 +88,7 @@ function SegmentTab({ p }) {
       <Card title="Segment map" subtitle="Rows: potential (what the physician could prescribe). Columns: adoption (where they are in the journey). Colour shows how many; the small figure is their average responsiveness score. Click a segment to see its physicians.">
         <div className="grid grid-cols-[6rem_repeat(3,1fr)] gap-1.5 text-sm">
           <div />
-          {ADOPT.map((a) => <div key={a} className="pb-1 text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{a}</div>)}
+          {ADOPT.map((a) => <div key={a} className="pb-1 text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{BAND_LADDER[a]}<div className="text-[10px] font-normal normal-case tracking-normal">({a})</div></div>)}
           {BANDS.map((b) => (<>
             <div key={b} className="flex items-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{b} potential</div>
             {ADOPT.map((a) => {
@@ -131,6 +132,10 @@ function SegmentTab({ p }) {
     )}
 
     <div className="grid gap-6 xl:grid-cols-[1fr_1.5fr]">
+      <Card title="The brand's ZS potential against the computed potential" subtitle={`They agree for ${p.zs_agree_pct}% of physicians. The plan uses the ${p.potential_source === "zs" ? "ZS classification" : "computed potential"} (setting: planning.potential_source).`}>
+        <Table rows={p.zs_vs_computed} columns={[{ key: "zs", label: "ZS potential", render: (r) => r.zs || r.index },
+          ...BANDS.map((b) => ({ key: b, label: `computed ${b}`, num: true }))]} />
+      </Card>
       <Card title="Today's tiers against the recommended bands" subtitle="Most physicians stay where they are; movers are one band at most.">
         <Table rows={p.tiers_vs_bands} columns={[{ key: "current_tier", label: "Today's tier", render: (r) => `Tier ${r.current_tier}` },
           ...BANDS.map((b) => ({ key: b, label: `${b} potential`, num: true }))]} />

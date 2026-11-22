@@ -42,6 +42,7 @@ RELATIONS = [
     ("suggestion_vod", "account_id", "account_vod", "id", "engine suggestions"),
     ("suggestion_vod", "user_id", "user_vod", "id", "suggestion's rep"),
     ("rep_brief", "user_id", "user_vod", "id", "weekly talk track"),
+    ("account_profile_vod", "account_id", "account_vod", "id", "physician's profile: concerns, barriers, ladders"),
     ("rep_plan_input", "account_id", "account_vod", "id", "rep adjustments to the plan"),
     ("hcp_segment", "account_id", "account_vod", "id", "physician's segment each quarter"),
     ("call_plan", "account_id", "account_vod", "id", "planned touches per physician"),

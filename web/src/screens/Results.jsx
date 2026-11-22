@@ -89,6 +89,7 @@ export default function Results({ pilot, runPilot }) {
         </motion.section>
 
         {m.spend && <SpendCheck sp={m.spend} />}
+        <AttainmentCard />
         {m.reallocation?.planned_due > 0 && <Reallocated r={m.reallocation} />}
 
         <Card title="Movicol brick sales, test vs control" subtitle="Units per month, indexed so the six months before the pilot average 100. One axis for both groups; the green area is the gap the engine opened.">
@@ -322,6 +323,69 @@ function Reallocated({ r }) {
         ))}
       </div>
       <p className="mt-3 text-xs text-[var(--muted)]">Net touches gained (green) or given up (coral) by each segment, after the quarterly plan. Moves are like for like and never add to the total.</p>
+    </Card>
+  );
+}
+
+// Planned against delivered contacts by potential band, and the quarterly contact distribution (as in the CRM chart).
+function AttainmentCard() {
+  const [a, setA] = useState(null);
+  const [band, setBand] = useState("high");
+  useEffect(() => { api("/attainment").then(setA).catch(() => {}); }, []);
+  if (!a || !a.by_band) return null;
+  const row = (arm, b) => a.by_band.find((r) => r.arm === arm && r.band === b) || {};
+  const dist = (arm) => Object.fromEntries(a.distribution.filter((d) => d.arm === arm && d.band === band).map((d) => [d.bucket, d.pct]));
+  const dt = dist("test"), dc = dist("control");
+  const max = Math.max(...a.buckets.map((b) => Math.max(dt[b] || 0, dc[b] || 0)), 1);
+  return (
+    <Card title="Did each doctor get the contacts their plan set?" subtitle={a.definition}>
+      <div className="overflow-auto rounded-xl border border-[var(--line)]">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--raised)] text-xs text-[var(--ink-2)]"><tr>
+            <th className="px-3 py-2 text-left font-medium">Potential</th>
+            <th className="px-3 py-2 text-right font-medium text-[var(--accent)]">Doctors who got their plan · test</th>
+            <th className="px-3 py-2 text-right font-medium text-[var(--series-2)]">· control</th>
+            <th className="px-3 py-2 text-right font-medium text-[var(--accent)]">Contacts delivered vs planned · test</th>
+            <th className="px-3 py-2 text-right font-medium text-[var(--series-2)]">· control</th>
+            <th className="px-3 py-2 text-right font-medium">Doctors below plan · test / control</th>
+          </tr></thead>
+          <tbody>{["high", "medium", "low"].map((b) => {
+            const t = row("test", b), c = row("control", b);
+            return (
+              <tr key={b} className="border-t border-[var(--line)]">
+                <td className="px-3 py-2 capitalize">{b}</td>
+                <td className="tabular px-3 py-2 text-right font-semibold">{num(t.met_pct)}%</td>
+                <td className="tabular px-3 py-2 text-right">{num(c.met_pct)}%</td>
+                <td className="tabular px-3 py-2 text-right font-semibold">{num(t.attainment_pct)}%</td>
+                <td className="tabular px-3 py-2 text-right">{num(c.attainment_pct)}%</td>
+                <td className="tabular px-3 py-2 text-right">{num(t.below_target)} / {num(c.below_target)}</td>
+              </tr>);
+          })}</tbody>
+        </table>
+      </div>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="text-sm text-[var(--ink-2)]">Contacts per doctor in the first quarter</div>
+        <div className="flex gap-1">{["high", "medium", "low"].map((b) => (
+          <button key={b} type="button" onClick={() => setBand(b)} className={`btn-pill border px-3 py-1 text-xs capitalize ${band === b ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--axis)] text-[var(--ink-2)]"}`}>{b} potential</button>))}</div>
+      </div>
+      <div className="mt-3 grid grid-cols-6 items-end gap-3" style={{ height: 150 }}>
+        {a.buckets.map((b, i) => (
+          <div key={b} className="flex h-full flex-col justify-end">
+            <div className="flex flex-1 items-end justify-center gap-1">
+              {[[dt[b], "var(--accent)"], [dc[b], "var(--series-2)"]].map(([v, col], j) => (
+                <motion.div key={j} className="w-1/3 rounded-t" style={{ background: col }} title={`${v || 0}%`}
+                  initial={{ height: 0 }} animate={{ height: `${(100 * (v || 0)) / max}%` }} transition={{ delay: i * 0.05 + j * 0.05, duration: 0.6 }} />
+              ))}
+            </div>
+            <div className="mt-1 text-center text-xs text-[var(--ink-2)]">{b}</div>
+            <div className="text-center text-[10px] text-[var(--muted)]">{num(dt[b] || 0)}% / {num(dc[b] || 0)}%</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-4 text-xs text-[var(--ink-2)]">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" />test</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[var(--series-2)]" />control</span>
+      </div>
     </Card>
   );
 }

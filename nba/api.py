@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from nba import author, data, datacatalog, features, measure, pipeline, plan_view, proposals, readiness, runner, spec, story
+from nba import attainment, author, data, datacatalog, features, measure, pipeline, plan_view, proposals, readiness, runner, spec, story, territory
 from nba.rules import catalogue, engine, versions
 
 app = FastAPI(title="Next best action engine", version="0.1")
@@ -193,6 +193,26 @@ def get_plan_physicians(cycle: int = 1, segment: str | None = None):
 
 
 # ------------------------------------------------------------------------------------------- doctor and rep view
+
+@app.get("/api/territory/reps")
+def territory_reps():
+    return out(territory.reps())
+
+
+@app.get("/api/territory/{user_id}")
+def territory_page(user_id: str, week: int | None = None):
+    """My territory this week: one row per doctor, joining segment, ladder, concern, plan progress and this week's action."""
+    try:
+        return out(territory.page(user_id, week))
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.get("/api/attainment")
+def get_attainment():
+    """Planned against delivered contacts, by potential band and rep, test against control."""
+    return out(attainment.report())
+
 
 @app.get("/api/story/doctors")
 def story_doctors():

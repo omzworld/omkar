@@ -68,3 +68,4 @@ planning:                    # added during the build: the baseline cycle plan a
   segment_band: 0.10         # a segment's delivered touches stay within +/-10% of its plan (pro rata through the cycle)
   swap_margin_eur: 5         # a swap must beat the planned touch it replaces by at least this much expected return
   must_see_visits: 3         # rep adjustment "must see": at least this many visits a quarter
+  potential_source: computed # potential band from the engine's score (computed) or the brand's ZS classification (zs)

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { api, num, words } from "../api";
 import { Badge, Button, Card, Message } from "../ui";
+import { ladderOf } from "../ladder.js";
 
 const STAGES = ["curiosity", "consideration", "experience", "loyalty", "advocacy"];
 const ROWS = ["visit", "remote call", "rep email", "marketing email", "webinar"];
@@ -106,7 +107,7 @@ function JourneyCard({ p, rule }) {
         <Kpi label="Touches in the pilot" value={num(p.touches)} />
         <Kpi label="Matched to their stage" value={p.matched_pct == null ? "–" : `${num(p.matched_pct)}%`} tone={p.matched_pct >= 50 ? "good" : null} />
         <Kpi label="Responses" value={num(p.responses)} />
-        <Kpi label="Journey" value={p.stages_moved > 0 ? `+${p.stages_moved}` : `${p.stages_moved ?? 0}`} note={`${p.stage_start} → ${p.stage_end}`} tone={p.stages_moved > 0 ? "good" : null} />
+        <Kpi label="Journey" value={p.stages_moved > 0 ? `+${p.stages_moved}` : `${p.stages_moved ?? 0}`} note={`${ladderOf(p.stage_start)} → ${ladderOf(p.stage_end)}`} tone={p.stages_moved > 0 ? "good" : null} />
       </div>
       <JourneyChart p={p} color={color} />
       {rule && <p className="mt-2 text-xs text-[var(--muted)]">Compared with {rule}.</p>}
@@ -127,7 +128,7 @@ function Kpi({ label, value, note, tone }) {
 // Stage over time as a step line; each touch as a mark on its channel's row. Green ring = matched content;
 // filled = responded. Week 0 is the pilot start.
 function JourneyChart({ p, color }) {
-  const W = 620, L = 92, R = 12, T = 12, SH = 110, RH = 15, H = T + SH + 18 + ROWS.length * RH + 16;
+  const W = 620, L = 104, R = 12, T = 12, SH = 110, RH = 15, H = T + SH + 18 + ROWS.length * RH + 16;
   const w0 = -8, w1 = 26;
   const x = (w) => L + ((w - w0) * (W - L - R)) / (w1 - w0);
   const y = (s) => T + SH - (STAGES.indexOf(s) * SH) / (STAGES.length - 1);
@@ -137,7 +138,7 @@ function JourneyChart({ p, color }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 w-full" role="img" aria-label={`Journey of ${p.name}`}>
       {STAGES.map((s) => (
-        <g key={s}><line x1={L} x2={W - R} y1={y(s)} y2={y(s)} stroke="var(--line)" /><text x={L - 6} y={y(s) + 4} textAnchor="end" fontSize="10.5" fill="var(--muted)">{s}</text></g>
+        <g key={s}><line x1={L} x2={W - R} y1={y(s)} y2={y(s)} stroke="var(--line)" /><text x={L - 6} y={y(s) + 4} textAnchor="end" fontSize="10.5" fill="var(--muted)">{ladderOf(s)}</text></g>
       ))}
       <line x1={x(0.5)} x2={x(0.5)} y1={T - 4} y2={H - 14} stroke="var(--axis)" strokeDasharray="3 4" />
       <text x={x(0.5) + 4} y={T + 4} fontSize="10" fill="var(--muted)">pilot starts</text>

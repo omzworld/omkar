@@ -146,6 +146,11 @@ tables:
     grain: one row per HCP per week
     fields: {account_id: string, week: date, stage: {type: string, values: [curiosity, consideration, experience, loyalty, advocacy]}}
 
+  account_profile_vod:
+    source: Veeva CRM (account profile, entered by reps; some fields from survey agencies; added during the build)
+    grain: one row per physician (the latest profile; last_updated says when it was last confirmed)
+    fields: {account_id: string, message_segment: {type: string, values: [patient_focus, pricing, product_belief, efficacy, safety]}, barrier: {type: string, values: [price, competitor_preference, low_belief, access, none]}, competitor: string, sentiment: {type: string, values: [positive, neutral, negative]}, influence: {type: string, values: [high, medium, low]}, plan_member: bool, decision_maker: bool, zs_potential: {type: string, values: [high, medium, low]}, belief_ladder: {type: string, values: [non_believer, neutral, believer]}, preference_ladder: {type: string, values: [competitor_preferred, no_preference, norgine_preferred]}, usage_ladder: {type: string, values: [unaware, aware, occasional, regular]}, last_updated: date, source: {type: string, values: [rep, survey]}}
+
   rep_plan_input:
     source: Veeva CRM (rep adjustments to the cycle plan; added during the build)
     grain: one row per rep adjustment per planning cycle

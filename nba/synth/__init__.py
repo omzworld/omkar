@@ -58,6 +58,49 @@ def _addresses(rng, account: pd.DataFrame, world: dict) -> pd.DataFrame:
                          "postal_address_verified": rng.random(n) < 0.92, "primary": True})
 
 
+def _account_profile(rng, design, world: dict, stage_weekly: pd.DataFrame) -> pd.DataFrame:
+    """The Veeva account profile reps keep for each physician: what they care about, what holds them back, their
+    position on Norgine's adoption ladders, and the external (ZS) potential. Mostly rep-entered, some from survey
+    agencies; confirmed at different times, and sometimes left blank, as in real CRM data. Ladders reflect the
+    physician's stage when the profile was last confirmed, so an old profile can be out of date."""
+    h = world["hcp"].reset_index(drop=True)
+    n = len(h)
+    end = pd.Timestamp(design["clock"]["history_end"])
+    sw = stage_weekly.assign(week=pd.to_datetime(stage_weekly.week))
+    # Last confirmed: mostly within the last year, some much older (the profile exercise runs once or twice a year).
+    age_days = np.where(rng.random(n) < 0.75, rng.integers(7, 365, n), rng.integers(365, 720, n))
+    updated = (end - pd.to_timedelta(age_days, unit="D")).normalize()
+    snap = pd.DataFrame({"account_id": h.id, "week": updated}).sort_values("week")
+    stage = pd.merge_asof(snap, sw.sort_values("week")[["account_id", "week", "stage"]], on="week", by="account_id",
+                          direction="backward").set_index("account_id").stage.reindex(h.id).fillna("curiosity").to_numpy()
+    usage = pd.Series(stage).map({"curiosity": "unaware", "consideration": "aware", "experience": "occasional",
+                                  "loyalty": "regular", "advocacy": "regular"}).to_numpy()
+    early = np.isin(stage, ["curiosity", "consideration"])
+    barrier = np.where(early, rng.choice(["low_belief", "competitor_preference", "access", "price", "none"], n, p=[.35, .3, .1, .15, .1]),
+                       rng.choice(["price", "competitor_preference", "access", "none", "low_belief"], n, p=[.3, .15, .1, .4, .05]))
+    belief = np.where(barrier == "low_belief", "non_believer", np.where(early, rng.choice(["neutral", "believer"], n, p=[.6, .4]), "believer"))
+    pref = np.where(barrier == "competitor_preference", "competitor_preferred",
+                    np.where(np.isin(stage, ["loyalty", "advocacy"]), "norgine_preferred", "no_preference"))
+    competitor = pd.Series(h.brand).map({"Movicol": ["generic macrogol", "lactulose", "stimulant laxative"],
+                                         "Plenvu_Moviprep": ["sodium picosulfate preparation", "high-volume PEG preparation"],
+                                         "Xifaxan": ["lactulose alone", "other antibiotic"]})
+    competitor = [rng.choice(opts) if isinstance(opts, list) else None for opts in competitor]
+    tier = h.tier.to_numpy()
+    zs = np.where(tier == "A", rng.choice(["high", "medium"], n, p=[.8, .2]),
+                  np.where(tier == "B", rng.choice(["high", "medium", "low"], n, p=[.15, .7, .15]), rng.choice(["medium", "low"], n, p=[.2, .8])))
+    df = pd.DataFrame({
+        "account_id": h.id, "message_segment": rng.choice(["patient_focus", "pricing", "product_belief", "efficacy", "safety"], n, p=[.25, .15, .2, .3, .1]),
+        "barrier": barrier, "competitor": competitor, "sentiment": rng.choice(["positive", "neutral", "negative"], n, p=[.35, .45, .2]),
+        "influence": np.where(h.expert_status.eq("key_people").to_numpy(), "high", rng.choice(["medium", "low"], n, p=[.35, .65])),
+        "plan_member": np.isin(tier, ["A", "B"]) | (rng.random(n) < 0.1), "decision_maker": h.hcp_role.isin(["unit_lead", "pharmacist_hospital"]).to_numpy(),
+        "zs_potential": zs, "belief_ladder": belief, "preference_ladder": pref, "usage_ladder": usage,
+        "last_updated": updated.date, "source": rng.choice(["rep", "survey"], n, p=[.8, .2])})
+    # Reps do not fill every field: leave about 15% of the attitudinal fields blank.
+    for col in ["message_segment", "barrier", "competitor", "sentiment", "belief_ladder", "preference_ladder"]:
+        df.loc[rng.random(n) < 0.15, col] = None
+    return df
+
+
 def _rep_plan_input(rng, design, world: dict) -> pd.DataFrame:
     """Reps' adjustments to the cycle plan, as they would enter them in the CRM before each cycle (about 4% of
     physicians each cycle). Two cycles: the pilot's first and second quarter."""
@@ -133,6 +176,7 @@ def generate(seed: int | None = None, scale: float = 1.0, data_dir: Path | None 
     out["procedure_volume"] = sales.procedure_volume(rng, design, world, hist["hcp_stage_weekly"])
     out["rep_capacity"] = _rep_capacity(rng, design, world["users"])
     out["rep_plan_input"] = _rep_plan_input(np.random.default_rng([seed, 202]), design, world)
+    out["account_profile_vod"] = _account_profile(np.random.default_rng([seed, 303]), design, world, hist["hcp_stage_weekly"])
     for t in ENGINE_TABLES:
         out[t] = schema.empty(t)
     out["feature_snapshot"] = pd.DataFrame({"account_id": pd.Series(dtype="string"),

@@ -8,7 +8,7 @@ import { Badge, Button, Card, Message, Stat, Table } from "../ui";
 // Columns of the data model diagram, left to right, in the order data flows.
 const LANES = [
   { key: "field", label: "Field force", tables: ["user_vod", "territory_vod", "rep_capacity", "rep_plan_input"] },
-  { key: "customers", label: "Customers", tables: ["hcp_master_opendata", "account_vod", "hco_master_opendata", "address_vod", "consent", "hcp_stage_weekly"] },
+  { key: "customers", label: "Customers", tables: ["hcp_master_opendata", "account_vod", "account_profile_vod", "hco_master_opendata", "address_vod", "consent", "hcp_stage_weekly"] },
   { key: "activity", label: "Activity", tables: ["call2_vod", "sent_email_vod", "email_activity_vod", "event_attendee_vod", "agency_email", "agency_media"] },
   { key: "market", label: "Content and market", tables: ["promomats_document", "iqvia_brick_sales", "procedure_volume", "iqvia_channel_preference"] },
   { key: "engine", label: "Engine outputs", tables: ["hcp_segment", "call_plan", "segment_budget", "suggestion_vod", "rep_brief", "feature_snapshot", "rule_draft", "ml_candidate", "proposed_rule"] },

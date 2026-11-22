@@ -7,6 +7,7 @@ import Home from "./screens/Home.jsx";
 import DataCenter from "./screens/DataCenter.jsx";
 import SegmentPlan from "./screens/SegmentPlan.jsx";
 import Stories from "./screens/Stories.jsx";
+import MyTerritory from "./screens/MyTerritory.jsx";
 import Readiness from "./screens/Readiness.jsx";
 import RuleStudio from "./screens/RuleStudio.jsx";
 import WeeklyRun from "./screens/WeeklyRun.jsx";
@@ -21,10 +22,11 @@ const SCREENS = [
   { id: "plan", n: 2, label: "Segment & plan", hint: "Quarterly segments and budget", icon: "▦", C: SegmentPlan },
   { id: "rules", n: 3, label: "Rule studio", hint: "Risk and opportunity signals", icon: "⚙", C: RuleStudio },
   { id: "week", n: 4, label: "Weekly run", hint: "The plan, and what moves", icon: "▶", C: WeeklyRun },
-  { id: "delivery", n: 5, label: "Delivery", hint: "What reps and the agency receive", icon: "➤", C: Delivery },
-  { id: "feedback", n: 6, label: "Feedback", hint: "What reps accepted, what to change", icon: "↻", C: Feedback },
-  { id: "results", n: 7, label: "Results and return", hint: "Same spend, test versus control", icon: "◔", C: Results },
-  { id: "stories", n: 8, label: "Doctor and rep view", hint: "One doctor, one rep, side by side", icon: "◉", C: Stories },
+  { id: "territory", n: 5, label: "My territory", hint: "The rep's one page this week", icon: "☰", C: MyTerritory },
+  { id: "delivery", n: 6, label: "Delivery", hint: "What reps and the agency receive", icon: "➤", C: Delivery },
+  { id: "feedback", n: 7, label: "Feedback", hint: "What reps accepted, what to change", icon: "↻", C: Feedback },
+  { id: "results", n: 8, label: "Results and return", hint: "Same spend, plan attainment, lift", icon: "◔", C: Results },
+  { id: "stories", n: 9, label: "Doctor and rep view", hint: "One doctor, one rep, side by side", icon: "◉", C: Stories },
 ];
 
 export default function App() {

@@ -323,6 +323,13 @@ def build_cycle(cycle: int, data_dir=None) -> tuple[pd.DataFrame, pd.DataFrame, 
     prev = data.read_table("hcp_segment", data_dir)
     prev = prev[prev.cycle == cycle - 1] if len(prev) else None
     seg = segment(t, hist, cycle, start, prev)
+    if cfg().get("potential_source") == "zs":              # the brand's own (ZS) potential, where it is recorded
+        zs = data.read_table("account_profile_vod", data_dir).set_index("account_id").zs_potential
+        band = seg.account_id.map(zs)
+        seg["moved"] = band.notna() & (band != seg.current_tier.map(TIER_BAND))
+        seg["potential_band"] = band.fillna(seg.potential_band)
+        seg["segment"] = seg.potential_band.str.capitalize() + " potential · " + seg.adoption_band
+        seg["move_reason"] = np.where(seg.moved, "ZS potential classification", None)
     plan, budget = allocate(seg, hist, t, data.read_table("rep_plan_input", data_dir), cycle, start, data_dir)
     return seg, plan, budget
 

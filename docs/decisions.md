@@ -302,3 +302,31 @@ Open items to settle before the steps that need them:
   consideration. Peer group (23 each): 48% moved up in test against 35% in control, on 7.5 against 10.1 touches.
   DE-REP24 (test) against DE-REP23 (control), 43 doctors each: 92 against 109 visits, 90% against 23% of visits
   stage-matched, 33% against 21% of their doctors moved up.
+
+## Changes from the Norgine analyst session (Raj's notes): the top three
+
+1. Planned against actual contacts by potential (`nba/attainment.py`, `/api/attainment`, a card on Results and return).
+   - Contacts are rep visits plus remote calls.
+   - Test target: the engine's quarterly plan for that doctor. Control target: today's call plan (visits a month by tier).
+   - A doctor "got their plan" when delivered ≥ planned, rounded.
+   - The card also shows the contacts-per-doctor distribution for the first quarter (0, 1, 2, 3-4, 5, 6+), matching the CRM chart Raj showed.
+   - Seed 2026: control got its plan for 48% of high-potential and 36% of medium-potential doctors, while low-potential doctors were over-served (146% of plan). Test was 73–79% in every band.
+2. My territory this week (`nba/territory.py`, `/api/territory/{rep}`, new screen 5). One page per rep, one row per doctor:
+   - segment and ZS potential
+   - ladder position now, against what the profile says
+   - concern and barrier, and the profile's age
+   - last contact
+   - quarter plan progress
+   - this week's action and why
+   - lead content (stage-matched) and supporting material for the concern
+   - headroom
+3. Norgine segmentation language and inputs.
+   - New table `account_profile_vod`, the rep-entered Veeva profile:
+     - message segment, barrier, competitor, sentiment, influence, plan member, decision maker
+     - ZS potential
+     - belief, preference and usage ladders
+     - date last updated
+     - About 15% of attitudinal fields are left blank, and about a quarter of profiles are over a year old.
+   - Journey stages are shown in the brand's ladder words: curiosity = unaware, consideration = aware, experience = occasional use, loyalty = regular use, advocacy = advocate.
+   - `planning.potential_source` chooses between the computed potential (default) and ZS. Segment & plan shows how far they agree (54% on seed 2026).
+   - Concern-based content is supporting material only; the lead content stays stage-matched, because that is what the learned odds show moves doctors.

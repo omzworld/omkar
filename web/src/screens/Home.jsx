@@ -16,10 +16,11 @@ const TOUR = {
   readiness: "Two markets, 3,000 doctors and 24 months of history. Is the data good enough to act on?",
   plan: "Segment every doctor, turn last year's budget into this quarter's plan by segment, and apply the reps' adjustments.",
   rules: "The risk and opportunity signals: change a threshold or write a new rule, and see who it reaches.",
+  territory: "The rep's single page: every doctor's segment, ladder position, concern, plan progress, this week's action and the content to use.",
   week: "One week of the plan: what goes ahead, what the engine moves to whom, and why. Turn the dial from plan to reallocate.",
   delivery: "What a rep, a key account manager and the agency would actually receive.",
   feedback: "Run to week 8: what reps accepted or dismissed, and the changes the engine proposes.",
-  results: "Run to week 26: same spend in both arms, then test against control, what moved, and the return.",
+  results: "Run to week 26: same spend in both arms, whether each doctor got their planned contacts, what moved, the lift and the return.",
   stories: "The same story through one doctor's journey and one rep's weeks, each next to a control counterpart and its whole peer group.",
 };
 
@@ -118,7 +119,7 @@ export default function Home({ pilot, go, screens }) {
 
       {/* Demo tour and pilot status */}
       <section>
-        <Reveal><SectionHead eyebrow="The demo" title="A guided tour in eight screens"
+        <Reveal><SectionHead eyebrow="The demo" title="A guided tour in nine screens"
           text="Follow them in order: each screen picks up where the last one left off." /></Reveal>
         <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
           <div className="grid gap-3 sm:grid-cols-2">

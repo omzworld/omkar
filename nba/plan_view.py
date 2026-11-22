@@ -39,6 +39,12 @@ def summary(cycle: int | None = None, data_dir=None) -> dict:
     names = data.read_table("account_vod", data_dir).set_index("id").name
     movers["name"] = movers.account_id.map(names)
     best = seg.best_channel.value_counts().to_dict()
+    prof = data.read_table("account_profile_vod", data_dir).set_index("account_id")
+    zs = seg.account_id.map(prof.zs_potential)
+    zs_vs = pd.crosstab(zs.fillna("not recorded"), seg.potential_band).reindex(columns=BAND_ORDER, fill_value=0)
+    zs_vs = zs_vs.reindex([b for b in [*BAND_ORDER, "not recorded"] if b in zs_vs.index]).rename_axis("zs")
+    rec = zs.notna().to_numpy()
+    zs_agree = round(100 * (zs.to_numpy()[rec] == seg.potential_band.to_numpy()[rec]).mean(), 0)
 
     by_channel = bud.groupby("channel")[["last_year_touches", "recommended_touches", "cost_last_year_eur",
                                           "cost_recommended_eur"]].sum().reset_index()
@@ -75,7 +81,9 @@ def summary(cycle: int | None = None, data_dir=None) -> dict:
         "moved": int(seg.moved.sum()), "movers": movers.sort_values("potential_score", ascending=False)[
             ["account_id", "name", "market", "current_tier", "potential_band", "adoption_band", "potential_score",
              "responsiveness_score", "move_reason"]].head(80).to_dict("records"),
-        "best_channel": best,
+        "best_channel": best, "potential_source": c.get("potential_source", "computed"),
+        "zs_vs_computed": zs_vs.reset_index().to_dict("records"),
+        "zs_agree_pct": zs_agree,
         "by_channel": by_channel.to_dict("records"), "by_segment": seg_view.to_dict("records"),
         "budget_rows": bud.to_dict("records"),
         "rep_inputs": inputs[["account_id", "name", "user_id", "adjustment", "reason"]].to_dict("records"),
