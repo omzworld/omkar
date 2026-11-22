@@ -110,7 +110,7 @@ export default function Feedback({ pilot, runPilot }) {
                 const ok = approved[p.rule_id];
                 return (
                   <motion.div key={p.rule_id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
-                    className={`relative overflow-hidden rounded-2xl border p-4 transition ${ok ? "border-[var(--good)] bg-[rgba(79,209,161,0.08)]" : "border-[rgba(255,143,122,0.4)] bg-[rgba(255,143,122,0.06)] shadow-[0_0_30px_-12px_var(--accent-2)]"}`}>
+                    className={`relative overflow-hidden rounded-2xl border p-4 transition ${ok ? "border-[var(--good)] bg-[color-mix(in_srgb,_var(--good)_8%,_transparent)]" : "border-[color-mix(in_srgb,_var(--accent-2)_40%,_transparent)] bg-[color-mix(in_srgb,_var(--accent-2)_6%,_transparent)] shadow-[0_0_30px_-12px_var(--accent-2)]"}`}>
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="max-w-3xl">
                         <div className="flex flex-wrap items-center gap-2">
@@ -122,7 +122,7 @@ export default function Feedback({ pilot, runPilot }) {
                         {Object.keys(p.proposed || {}).length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-3">
                             {Object.entries(p.proposed).map(([k, v]) => (
-                              <div key={k} className="flex items-center gap-2 rounded-xl border border-[var(--line)] bg-black/20 px-3 py-1.5 text-sm">
+                              <div key={k} className="flex items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--well)] px-3 py-1.5 text-sm">
                                 <span className="text-[var(--muted)]">{words(k)}</span>
                                 <span className="tabular text-[var(--bad)] line-through decoration-1">{String(p.current?.[k])}</span>
                                 <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4 }} className="text-[var(--accent)]">→</motion.span>
@@ -135,7 +135,7 @@ export default function Feedback({ pilot, runPilot }) {
                       </div>
                       {ok ? (
                         <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2 font-semibold text-[var(--good-ink)]">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--good)] text-[#ffffff]">✓</span>Version {ok.version}
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--good)] text-[var(--on-accent)]">✓</span>Version {ok.version}
                         </motion.div>
                       ) : (
                         <Button onClick={() => approve(p.rule_id)}>{Object.keys(p.proposed || {}).length ? "Approve the change" : "Approve: pause the rule"}</Button>
@@ -199,7 +199,7 @@ function WeekColumns({ weeks }) {
             return (
               <div key={i} className="group relative flex h-full flex-1 items-end">
                 <motion.div className="w-full rounded-t-md" title={`Week ${i + 1}: ${pct(w.acceptance_pct, 0)}`}
-                  style={{ background: ok ? "linear-gradient(to top, rgba(79,209,161,0.2), #4fd1a1)" : "linear-gradient(to top, rgba(255,107,107,0.2), #ff6b6b)", boxShadow: `0 0 12px -2px ${ok ? "#4fd1a1" : "#ff6b6b"}` }}
+                  style={{ background: ok ? "linear-gradient(to top, color-mix(in srgb, var(--good) 20%, transparent), var(--good))" : "linear-gradient(to top, color-mix(in srgb, var(--bad) 20%, transparent), var(--bad))", boxShadow: `0 0 12px -2px ${ok ? "var(--good)" : "var(--bad)"}` }}
                   initial={{ height: 0 }} animate={{ height: `${(100 * Math.min(w.acceptance_pct, top)) / top}%` }} transition={{ delay: i * 0.05, duration: 0.7, ease: [0.16, 1, 0.3, 1] }} />
                 <span className="tabular pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-[var(--ink-2)] opacity-0 transition group-hover:opacity-100">{num(w.acceptance_pct, 0)}%</span>
               </div>

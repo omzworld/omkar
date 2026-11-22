@@ -231,7 +231,7 @@ function PlanVisual({ p }) {
         <div />{adopt.map((a) => <div key={a} className="text-center uppercase tracking-wider text-[var(--muted)]">{a}</div>)}
         {bands.map((b) => [<div key={b} className="flex items-center uppercase tracking-wider text-[var(--muted)]">{b}</div>,
           ...adopt.map((a) => { const g = p.grid.find((x) => x.potential_band === b && x.adoption_band === a) || { physicians: 0 };
-            return <div key={b + a} className="rounded-lg p-2 text-center" style={{ background: `rgba(106,109,255,${0.08 + 0.5 * g.physicians / max})` }}><span className="display tabular text-base font-bold">{num(g.physicians)}</span></div>; })])}
+            return <div key={b + a} className="rounded-lg p-2 text-center" style={{ background: `color-mix(in srgb, var(--accent) ${Math.round(100 * (0.08 + 0.5 * g.physicians / max))}%, transparent)` }}><span className="display tabular text-base font-bold">{num(g.physicians)}</span></div>; })])}
       </motion.div>
       <div className="grid grid-cols-2 gap-3">
         <Big i={1} value={eur(ly)} label="last year, one quarter" />

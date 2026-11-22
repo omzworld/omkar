@@ -102,7 +102,7 @@ export default function MyTerritory({ pilot, go }) {
                     <td className="px-3 py-2"><div>{r.lead_theme ? words(r.lead_theme) : "–"}</div>
                       {r.support_theme && <div className="text-xs text-[var(--accent-2)]">+ {words(r.support_theme)}</div>}</td>
                   </tr>
-                  {open === r.id && <tr key={r.id + "-d"}><td colSpan={8} className="border-t border-[var(--line)] bg-black/20 px-4 py-3"><Detail r={r} go={go} /></td></tr>}
+                  {open === r.id && <tr key={r.id + "-d"}><td colSpan={8} className="border-t border-[var(--line)] bg-[var(--well)] px-4 py-3"><Detail r={r} go={go} /></td></tr>}
                 </>))}
                 {rows.length === 0 && <tr><td colSpan={8} className="px-3 py-6 text-center text-sm text-[var(--muted)]">No doctors match this filter this week.</td></tr>}
               </tbody>

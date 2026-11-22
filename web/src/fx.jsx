@@ -24,7 +24,7 @@ export function Tilt({ children, className = "", max = 4, as = "div", ...rest })
   const rotateX = useTransform(sy, [0, 1], [max, -max]);
   const rotateY = useTransform(sx, [0, 1], [-max, max]);
   const light = useTransform([sx, sy], ([a, b]) =>
-    `radial-gradient(22rem circle at ${a * 100}% ${b * 100}%, rgba(106,109,255,0.12), transparent 45%)`);
+    `radial-gradient(22rem circle at ${a * 100}% ${b * 100}%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 45%)`);
   const M = motion[as];
   return (
     <M

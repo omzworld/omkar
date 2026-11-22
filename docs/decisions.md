@@ -372,3 +372,18 @@ Open items to settle before the steps that need them:
     suggestions acted on (20%).
   - Payout: nothing below 75% achievement, 100% at 100% achievement, capped at 150%.
   - It also shows the rep's rank in their market and what would move the payout. Not Norgine's real scheme.
+
+## Look and feel: Omnisense, Genpact branding, light and dark themes
+
+- The platform is called **Omnisense**: browser title, sidebar, home page and favicon.
+  - The product mark: a ring of signals around a centre, with a Genpact Sunset Orange dot for the next best action.
+- **Genpact logo:** the official mark taken from the Genpact deck template (paths unchanged), drawn in the current
+  text colour so it reads on both themes. It appears in the sidebar ("by Genpact"), the sidebar footer ("Powered by") and on home.
+- **Dark theme:** unchanged, and the default.
+- **Light theme:** the Genpact brand palette.
+  - Morning White and Sunrise Cream surfaces, Midnight Black text.
+  - Sunset Orange as the working colour: buttons, bars, the test series.
+  - Genpact Coral for labels and the control series.
+  - Text in the accent colour uses a deeper orange, because Sunset Orange is too light for small text on white.
+- The switch sits in the sidebar header and is remembered per browser. All screens read colour tokens: hard-coded
+  colours in charts and maps were moved to the tokens, so both themes apply everywhere.

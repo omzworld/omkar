@@ -1,5 +1,6 @@
 // Home: what the tool does, the live platform map, what is different, and the guided demo tour.
 import { useEffect, useState } from "react";
+import { GenpactLogo } from "../brand.jsx";
 import { motion } from "motion/react";
 import { api, num } from "../api";
 import { CountUp, Reveal, Tilt } from "../fx.jsx";
@@ -51,7 +52,7 @@ export default function Home({ pilot, go, screens }) {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="kicker inline-flex items-center gap-2.5">
           <span className="h-px w-6 bg-[var(--accent-2)]" />
-          Pharma omnichannel · Next best action engine
+          Omnisense · next best action for pharma omnichannel
         </motion.div>
         <h1 className="display mt-6 max-w-4xl text-4xl font-bold leading-[1.02] tracking-[-0.03em] md:text-6xl">
           {HEADLINE.map((w, i) => (
@@ -67,6 +68,8 @@ export default function Home({ pilot, go, screens }) {
           now: a sales area slipping, a competitor push, a doctor ready for the next step. Same touches, same spend,
           better allocated, every move explained.
         </motion.p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+          className="mt-5 flex items-center gap-2 text-sm text-[var(--muted)]">A platform by <GenpactLogo className="h-8 w-auto text-[var(--ink)]" /></motion.div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="mt-8 flex flex-wrap gap-3">
           <button onClick={() => document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             className="btn-primary px-6 py-3 text-sm font-semibold">See how it works ↓</button>
@@ -108,7 +111,7 @@ export default function Home({ pilot, go, screens }) {
           {DIFFERENT.map((d, i) => (
             <Reveal key={d.title} delay={i * 0.08} className="h-full">
               <Tilt className="glass glow-hover h-full rounded-2xl p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent)]/25 to-[var(--accent-2)]/25 text-base font-semibold text-[var(--accent)] ring-1 ring-[rgba(106,109,255,0.35)]" aria-hidden>{d.icon}</div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent)]/25 to-[var(--accent-2)]/25 text-base font-semibold text-[var(--accent)] ring-1 ring-[color-mix(in_srgb,_var(--accent)_35%,_transparent)]" aria-hidden>{d.icon}</div>
                 <div className="display mt-4 font-semibold">{d.title}</div>
                 <p className="mt-1.5 text-sm text-[var(--ink-2)]">{d.text}</p>
               </Tilt>

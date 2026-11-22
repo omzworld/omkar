@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { api } from "./api";
 import { Backdrop } from "./fx.jsx";
+import { GenpactLogo, OmnisenseMark } from "./brand.jsx";
 import Home from "./screens/Home.jsx";
 import DataCenter from "./screens/DataCenter.jsx";
 import SegmentPlan from "./screens/SegmentPlan.jsx";
@@ -32,6 +33,11 @@ const SCREENS = [
 export default function App() {
   const [screen, setScreen] = useState(() => window.location.hash.slice(1) || "home");
   const [pilot, setPilot] = useState(null);
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || "dark");
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem("omnisense-theme", theme); } catch { /* private window: theme just isn't remembered */ }
+  }, [theme]);
 
   const refresh = useCallback(() => api("/pilot/status").then(setPilot).catch(() => setPilot(null)), []);
   useEffect(() => { refresh(); }, [refresh]);
@@ -62,15 +68,18 @@ export default function App() {
       <Backdrop />
       <div className="relative z-10 min-h-screen md:grid md:grid-cols-[17rem_1fr]">
         <aside className="glass border-0 border-b border-[var(--line)] p-4 md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r">
-          <button onClick={() => go("home")} className="group mb-6 flex items-center gap-3 text-left">
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-[#ffffff] shadow-[0_0_24px_-4px_var(--accent)] transition group-hover:rotate-12">
-              <span className="display text-sm font-bold">N</span>
-            </span>
-            <span>
-              <span className="display block text-sm font-semibold">Next best action</span>
-              <span className="block text-xs text-[var(--muted)]">Pharma omnichannel · MVP</span>
-            </span>
-          </button>
+          <div className="mb-6 flex items-start justify-between gap-2">
+            <button onClick={() => go("home")} className="group flex items-center gap-3 text-left" aria-label="Omnisense home">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--chip)] text-[var(--ink)] ring-1 ring-[var(--line)] transition group-hover:rotate-12">
+                <OmnisenseMark className="h-7 w-7" />
+              </span>
+              <span>
+                <span className="display block text-lg font-bold leading-tight tracking-tight">Omnisense</span>
+                <span className="flex items-center gap-1.5 text-[11px] text-[var(--muted)]">by <GenpactLogo className="h-5 w-auto text-[var(--ink)]" /></span>
+              </span>
+            </button>
+            <ThemeSwitch theme={theme} setTheme={setTheme} />
+          </div>
           <nav className="grid grid-cols-2 gap-1 md:grid-cols-1">
             {SCREENS.map((s, i) => {
               const active = screen === s.id;
@@ -110,6 +119,12 @@ export default function App() {
             {pilot?.error && <div className="mt-1 text-[var(--bad)]">The last run failed.</div>}
           </div>
           <p className="mt-4 text-xs text-[var(--muted)]">All data is synthetic. No real physicians, no messages sent.</p>
+          <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3 text-[11px] text-[var(--muted)]">
+            <span>Omnisense · next best action for pharma omnichannel</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--muted)]">
+            <span>Powered by</span><GenpactLogo className="h-7 w-auto text-[var(--ink)]" />
+          </div>
         </aside>
         <main className="min-w-0 p-4 md:p-8">
           <AnimatePresence mode="wait">
@@ -124,5 +139,21 @@ export default function App() {
         </main>
       </div>
     </MotionConfig>
+  );
+}
+
+// Light and dark themes. The choice is remembered in this browser.
+function ThemeSwitch({ theme, setTheme }) {
+  const light = theme === "light";
+  return (
+    <button type="button" onClick={() => setTheme(light ? "dark" : "light")} title={light ? "Switch to the dark theme" : "Switch to the light theme"}
+      aria-label={light ? "Switch to the dark theme" : "Switch to the light theme"}
+      className="relative mt-1 flex h-7 w-12 shrink-0 items-center rounded-full border border-[var(--axis)] bg-[var(--chip)] px-0.5">
+      <motion.span layout transition={{ type: "spring", stiffness: 500, damping: 32 }}
+        className={`flex h-5.5 w-5.5 items-center justify-center rounded-full text-[11px] ${light ? "ml-auto bg-[var(--accent)] text-[var(--on-accent)]" : "bg-[var(--surface)] text-[var(--ink)]"}`}
+        style={{ height: 22, width: 22 }}>
+        {light ? "☀" : "☾"}
+      </motion.span>
+    </button>
   );
 }

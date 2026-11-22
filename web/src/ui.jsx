@@ -67,7 +67,7 @@ export function Status({ passed }) {
 export function Table({ columns, rows, empty = "Nothing to show.", maxHeight }) {
   if (!rows || rows.length === 0) return <p className="text-sm text-[var(--muted)]">{empty}</p>;
   return (
-    <div className="overflow-auto rounded-xl border border-[var(--line)] bg-black/10" style={maxHeight ? { maxHeight } : undefined}>
+    <div className="overflow-auto rounded-xl border border-[var(--line)] bg-[var(--well)]" style={maxHeight ? { maxHeight } : undefined}>
       <table className="w-full border-collapse text-sm">
         <thead className="sticky top-0 bg-[var(--raised)]">
           <tr>

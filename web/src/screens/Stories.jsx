@@ -30,7 +30,7 @@ export default function Stories({ pilot, go }) {
         <div className="flex rounded-full border border-[var(--axis)] p-0.5 text-sm w-fit">
           {[["doctor", "A doctor's journey"], ["rep", "A rep's weeks"]].map(([k, l]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
-              className={`btn-pill px-4 py-1.5 transition ${tab === k ? "bg-[var(--accent)] text-white" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
+              className={`btn-pill px-4 py-1.5 transition ${tab === k ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
           ))}
         </div>
         <AnimatePresence mode="wait">
@@ -117,7 +117,7 @@ function JourneyCard({ p, rule }) {
 
 function Kpi({ label, value, note, tone }) {
   return (
-    <div className="rounded-xl border border-[var(--line)] bg-black/20 p-2.5">
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--well)] p-2.5">
       <div className="text-[11px] leading-tight text-[var(--ink-2)]">{label}</div>
       <div className={`display tabular mt-1 text-xl font-bold ${tone === "good" ? "text-[var(--good-ink)]" : ""}`}>{value}</div>
       {note && <div className="text-[11px] text-[var(--muted)]">{note}</div>}
@@ -223,7 +223,7 @@ function EventList({ p }) {
                 <span className="tabular mr-2 text-xs text-[var(--muted)]">{e.date}</span>A planned {e.channel} went to another doctor: {e.why}
               </div>
             ) : (
-              <div className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-xl border border-[var(--line)] bg-black/20 px-3 py-2 text-sm">
+              <div className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-xl border border-[var(--line)] bg-[var(--well)] px-3 py-2 text-sm">
                 <span className="tabular w-24 text-xs text-[var(--muted)]">{e.date}</span>
                 <span className="w-28 font-medium">{e.label}</span>
                 <span className="w-36 text-[var(--ink-2)]">{e.theme ? words(e.theme) : "no content"}</span>
@@ -348,7 +348,7 @@ function WeekDetail({ d, weeks, week, setWeek }) {
             <div className="kicker mb-2 text-[11px]">The plan ({d.planned.length})</div>
             <div className="space-y-1">
               {d.planned.map((p, i) => (
-                <div key={i} className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--line)] bg-black/20 px-3 py-1.5 text-sm">
+                <div key={i} className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--well)] px-3 py-1.5 text-sm">
                   <span className="font-medium">{p.doctor}</span><span className="text-[var(--ink-2)]">{p.channel}, {words(p.theme)}</span>
                   <Badge tone={tone[p.status] || "neutral"}>{p.status === "sent" ? "as planned" : p.status === "moved" ? "given to another doctor" : "blocked"}</Badge>
                 </div>
@@ -360,7 +360,7 @@ function WeekDetail({ d, weeks, week, setWeek }) {
             <div className="kicker mb-2 text-[11px]">Changes from the engine ({d.changes.length})</div>
             <div className="space-y-1.5">
               {d.changes.map((c, i) => (
-                <div key={i} className="rounded-lg border border-[rgba(255,143,122,0.35)] bg-[rgba(255,143,122,0.06)] px-3 py-2 text-sm">
+                <div key={i} className="rounded-lg border border-[color-mix(in_srgb,_var(--accent-2)_35%,_transparent)] bg-[color-mix(in_srgb,_var(--accent-2)_6%,_transparent)] px-3 py-2 text-sm">
                   <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{c.doctor}</span><span className="text-[var(--ink-2)]">{c.channel}, {words(c.theme)}</span>
                     <Badge tone={c.rep_decision === "accepted" ? "good" : c.rep_decision === "dismissed" ? "bad" : "neutral"}>{c.rep_decision === "dismissed" ? "declined: planned touch went ahead" : c.rep_decision}</Badge></div>
                   <div className="mt-1 text-xs text-[var(--muted)]">{c.why}</div>
@@ -372,7 +372,7 @@ function WeekDetail({ d, weeks, week, setWeek }) {
         </div>
         <div>
           <div className="kicker mb-2 text-[11px]">Monday talk track</div>
-          {d.talk_track ? <div className="whitespace-pre-line rounded-xl border border-[var(--line)] bg-black/20 p-4 text-sm leading-relaxed">{d.talk_track}</div>
+          {d.talk_track ? <div className="whitespace-pre-line rounded-xl border border-[var(--line)] bg-[var(--well)] p-4 text-sm leading-relaxed">{d.talk_track}</div>
             : <p className="text-sm text-[var(--muted)]">No talk track this week.</p>}
         </div>
       </div>

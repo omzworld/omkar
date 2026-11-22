@@ -70,12 +70,12 @@ export default function Results({ pilot, runPilot }) {
         {/* The verdict */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE }}
           className="glass relative overflow-hidden rounded-3xl p-6 md:p-8">
-          <div aria-hidden className="absolute -right-24 -top-24 h-72 w-72 rounded-full blur-3xl" style={{ background: m.lift.lift_pts > 0 ? "rgba(79,209,161,0.25)" : "rgba(255,107,107,0.25)" }} />
+          <div aria-hidden className="absolute -right-24 -top-24 h-72 w-72 rounded-full blur-3xl" style={{ background: m.lift.lift_pts > 0 ? "color-mix(in srgb, var(--good) 25%, transparent)" : "color-mix(in srgb, var(--bad) 25%, transparent)" }} />
           <div className="relative grid items-center gap-6 lg:grid-cols-[auto_1fr]">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-2)]">Brick sales lift, test vs control</div>
               <div className={`display tabular mt-1 text-6xl font-semibold md:text-7xl ${m.lift.lift_pts > 0 ? "text-[var(--good-ink)]" : "text-[var(--bad)]"}`}
-                style={{ textShadow: `0 0 40px ${m.lift.lift_pts > 0 ? "rgba(79,209,161,0.5)" : "rgba(255,107,107,0.5)"}` }}>
+                style={{ textShadow: `0 0 40px ${m.lift.lift_pts > 0 ? "color-mix(in srgb, var(--good) 50%, transparent)" : "color-mix(in srgb, var(--bad) 50%, transparent)"}` }}>
                 <CountUp value={`${m.lift.lift_pts >= 0 ? "+" : ""}${num(m.lift.lift_pts, 1)}`} /><span className="text-3xl"> pts</span>
               </div>
               <div className="mt-1 text-sm text-[var(--ink-2)]">{m.lift.first_month} to {m.lift.last_month}, against the months before</div>
@@ -173,7 +173,7 @@ export default function Results({ pilot, runPilot }) {
 
 function Mini({ label, value, note, color }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-black/20 p-4" style={{ boxShadow: `inset 0 1px 0 ${color}` }}>
+    <div className="rounded-2xl border border-[var(--line)] bg-[var(--well)] p-4" style={{ boxShadow: `inset 0 1px 0 ${color}` }}>
       <div className="text-xs text-[var(--ink-2)]">{label}</div>
       <div className="display tabular mt-1 text-2xl font-semibold" style={{ color }}><CountUp value={value} /></div>
       <div className="text-xs text-[var(--muted)]">{note}</div>
@@ -206,9 +206,9 @@ function Gate({ g, i }) {
   const color = g.passed ? "var(--good)" : "var(--bad)";
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.25, duration: 0.5, ease: EASE }}
-      className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-black/20 p-3">
-      <motion.span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-[#ffffff]"
-        initial={{ scale: 0, backgroundColor: "rgba(140,140,160,0.2)" }} whileInView={{ scale: 1, backgroundColor: g.passed ? "#4fd1a1" : "#ff6b6b" }}
+      className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--well)] p-3">
+      <motion.span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-[var(--on-accent)]"
+        initial={{ scale: 0, backgroundColor: "rgba(140,140,160,0.2)" }} whileInView={{ scale: 1, backgroundColor: g.passed ? "var(--good)" : "var(--bad)" }}
         viewport={{ once: true }} transition={{ delay: 0.45 + i * 0.25, type: "spring", stiffness: 300, damping: 15 }}
         style={{ boxShadow: `0 0 18px -2px ${color}` }}>{g.passed ? "✓" : "✕"}</motion.span>
       <div className="min-w-0 flex-1">
@@ -275,7 +275,7 @@ function SpendCheck({ sp }) {
         <Box label="Spend per physician" a={eur(sp.test_cost_per_physician_eur)} b={eur(sp.control_cost_per_physician_eur)} diff={sp.cost_diff_pct} />
         <Box label="Touches per physician" a={num(sp.test_touches_per_physician, 1)} b={num(sp.control_touches_per_physician, 1)} diff={sp.touches_diff_pct} />
         {sp.plan_budget_eur != null && (
-          <div className="rounded-2xl border border-[var(--line)] bg-black/20 p-4">
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--well)] p-4">
             <div className="text-xs text-[var(--ink-2)]">Test against its planned budget</div>
             <div className="display tabular mt-1 text-2xl font-bold">{eur(sp.plan_spent_eur)}</div>
             <div className="text-xs text-[var(--muted)]">of {eur(sp.plan_budget_eur)} planned ({sp.vs_plan_pct >= 0 ? "+" : ""}{num(sp.vs_plan_pct, 1)}%): touches blocked by consent or eligibility are not made up</div>
@@ -295,7 +295,7 @@ function SpendCheck({ sp }) {
 
 function Box({ label, a, b, diff }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-black/20 p-4">
+    <div className="rounded-2xl border border-[var(--line)] bg-[var(--well)] p-4">
       <div className="text-xs text-[var(--ink-2)]">{label}</div>
       <div className="mt-1 flex items-baseline gap-2"><span className="display tabular text-2xl font-bold text-[var(--accent)]">{a}</span><span className="text-sm text-[var(--muted)]">test</span></div>
       <div className="flex items-baseline gap-2"><span className="display tabular text-lg font-semibold text-[var(--series-2)]">{b}</span><span className="text-sm text-[var(--muted)]">control</span></div>

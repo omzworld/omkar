@@ -99,7 +99,7 @@ export default function NewRule({ onClose, onApproved }) {
           <div className="space-y-2">
             {form.conditions.map((c, i) => (
               <motion.div key={i} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                className="grid items-start gap-2 rounded-xl border border-[var(--line)] bg-black/20 p-2 md:grid-cols-[minmax(12rem,1.3fr)_minmax(8rem,0.8fr)_1fr_auto]">
+                className="grid items-start gap-2 rounded-xl border border-[var(--line)] bg-[var(--well)] p-2 md:grid-cols-[minmax(12rem,1.3fr)_minmax(8rem,0.8fr)_1fr_auto]">
                 <select className={inputClass} value={c.column} onChange={(e) => pickColumn(i, e.target.value)} aria-label="Column">
                   <option value="">Choose a column…</option>
                   <option value="__theme__">has received a content theme</option>
@@ -255,7 +255,7 @@ function Line({ tone, children }) {
 
 function Big({ label, value, note, tone }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-black/20 p-4">
+    <div className="rounded-2xl border border-[var(--line)] bg-[var(--well)] p-4">
       <div className="text-xs text-[var(--ink-2)]">{label}</div>
       <div className={`display tabular mt-1 text-2xl font-bold ${tone === "good" ? "text-[var(--good-ink)]" : ""}`}>{value}</div>
       <div className="text-xs text-[var(--muted)]">{note}</div>

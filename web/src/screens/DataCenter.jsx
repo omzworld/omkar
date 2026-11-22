@@ -13,7 +13,7 @@ const LANES = [
   { key: "market", label: "Content and market", tables: ["promomats_document", "iqvia_brick_sales", "procedure_volume", "iqvia_channel_preference"] },
   { key: "engine", label: "Engine outputs", tables: ["hcp_segment", "call_plan", "segment_budget", "suggestion_vod", "rep_brief", "feature_snapshot", "rule_draft", "ml_candidate", "proposed_rule"] },
 ];
-const LANE_COLOR = { field: "#ffd0a8", customers: "#6a6dff", activity: "#8a8dff", market: "#ff8f7a", engine: "#4fd1a1" };
+const LANE_COLOR = { field: "var(--accent-3)", customers: "var(--accent)", activity: "var(--work)", market: "var(--accent-2)", engine: "var(--good)" };
 const ROADMAP = new Set(["rule_draft", "ml_candidate", "proposed_rule"]);
 
 export default function DataCenter({ go }) {
@@ -154,7 +154,7 @@ function Lineage({ systems, tables, c, system, setSystem }) {
               {s.items.map((it, j) => (
                 <motion.button key={it.label} type="button" disabled={!it.click} onClick={() => it.click && setSystem(system === it.key ? "all" : it.key)}
                   initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.12 + j * 0.04 }}
-                  className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-left text-xs transition ${system === it.key ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-black/20"} ${it.click ? "hover:border-[var(--axis)]" : "cursor-default"}`}>
+                  className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-left text-xs transition ${system === it.key ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-[var(--well)]"} ${it.click ? "hover:border-[var(--axis)]" : "cursor-default"}`}>
                   <span>{it.label}</span>{it.n != null && <span className="tabular text-[var(--muted)]">{it.n}</span>}
                 </motion.button>
               ))}
@@ -198,10 +198,10 @@ function ModelDiagram({ byName, relations, onOpen, open }) {
           const d = path(r.child, r.parent);
           if (!d) return null;
           const on = focus && (r.child === focus || r.parent === focus);
-          const color = r.match_pct >= 99.5 ? "#4fd1a1" : r.match_pct >= 95 ? "#ffd0a8" : "#ff6b6b";
+          const color = r.match_pct >= 99.5 ? "var(--good)" : r.match_pct >= 95 ? "var(--accent-3)" : "var(--bad)";
           return (
             <g key={i}>
-              <motion.path d={d} fill="none" stroke={on ? color : "#3a3a44"} strokeWidth={on ? 2 : 1.1} opacity={focus && !on ? 0.25 : 1}
+              <motion.path d={d} fill="none" stroke={on ? color : "var(--axis)"} strokeWidth={on ? 2 : 1.1} opacity={focus && !on ? 0.25 : 1}
                 initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.2 + i * 0.03 }} />
               {on && <circle r="3" fill={color}><animateMotion dur="1.8s" repeatCount="indefinite" path={d} /></circle>}
             </g>
@@ -214,17 +214,17 @@ function ModelDiagram({ byName, relations, onOpen, open }) {
           return (
             <g key={name} transform={`translate(${p.x},${p.y})`} style={{ cursor: "pointer" }} opacity={dim ? 0.35 : 1}
               onMouseEnter={() => setHover(name)} onMouseLeave={() => setHover(null)} onClick={() => onOpen(name)}>
-              <rect width={NW} height={NH} rx="10" fill={focus === name ? "#1d2056" : "#141418"} stroke={focus === name ? "#6a6dff" : "#26262c"} strokeDasharray={roadmap ? "4 4" : undefined} />
+              <rect width={NW} height={NH} rx="10" fill={focus === name ? "var(--accent-soft)" : "var(--surface)"} stroke={focus === name ? "var(--accent)" : "var(--line)"} strokeDasharray={roadmap ? "4 4" : undefined} />
               <rect x="0" y="10" width="3" height={NH - 20} rx="1.5" fill={LANE_COLOR[p.lane]} />
-              <text x="12" y="20" fontSize="12.5" fontWeight="600" fill={roadmap ? "#76767a" : "#f1f1ff"}>{name}</text>
-              <text x="12" y="36" fontSize="11" fill="#76767a">{roadmap ? "roadmap" : `${num(t?.rows)} rows · ${t?.actual_fields ?? t?.declared_fields} fields`}</text>
+              <text x="12" y="20" fontSize="12.5" fontWeight="600" fill={roadmap ? "var(--muted)" : "var(--ink)"}>{name}</text>
+              <text x="12" y="36" fontSize="11" fill="var(--muted)">{roadmap ? "roadmap" : `${num(t?.rows)} rows · ${t?.actual_fields ?? t?.declared_fields} fields`}</text>
             </g>
           );
         })}
       </svg>
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--ink-2)]">
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-[#4fd1a1]" />join: 99.5% or more of keys match</span>
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-[#ffd0a8]" />95 to 99.5% (some keys have no partner)</span>
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-[var(--good)]" />join: 99.5% or more of keys match</span>
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-[var(--accent-3)]" />95 to 99.5% (some keys have no partner)</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded border border-dashed border-[var(--axis)]" />planned table, not yet produced</span>
       </div>
     </div>
@@ -243,7 +243,7 @@ function FieldPanel({ t, relations, onClose, tab, setTab }) {
           <div className="flex rounded-full border border-[var(--axis)] p-0.5 text-sm">
             {[["fields", "Fields"], ["data", "Data"]].map(([k, l]) => (
               <button key={k} type="button" disabled={k === "data" && !hasData} onClick={() => setTab(k)}
-                className={`btn-pill px-4 py-1.5 transition disabled:opacity-40 ${tab === k ? "bg-[var(--accent)] text-white" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
+                className={`btn-pill px-4 py-1.5 transition disabled:opacity-40 ${tab === k ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
             ))}
           </div>
           <Button kind="secondary" onClick={onClose}>Close</Button>
@@ -354,7 +354,7 @@ function DataViewer({ name }) {
 }
 
 function Mini({ label, value }) {
-  return <div className="rounded-xl border border-[var(--line)] bg-black/20 p-2.5"><div className="text-[11px] text-[var(--muted)]">{label}</div><div className="tabular text-sm">{value}</div></div>;
+  return <div className="rounded-xl border border-[var(--line)] bg-[var(--well)] p-2.5"><div className="text-[11px] text-[var(--muted)]">{label}</div><div className="tabular text-sm">{value}</div></div>;
 }
 
 function Fill({ pct }) {

@@ -27,9 +27,47 @@
   --chip: #1d1d23;
   --accent-soft: #1d2056;
   --glow: 0 10px 40px -10px rgb(106 109 255 / 0.55);
+  --on-accent: #ffffff;                  /* text on an accent fill */
+  --well: rgb(0 0 0 / 0.2);              /* recessed areas inside a card */
+  --brand-orange: #ffad28;               /* Genpact Sunset Orange: brand marks only in the dark theme */
   --font-display: "Funnel Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
 }
+
+/* Light theme: the Genpact brand palette. Morning White and Sunrise Cream surfaces, Midnight Black text,
+   Sunset Orange as the working colour (fills, bars, the test series), Genpact Coral for labels and the
+   control series. Orange is too light for small text on white, so text in the accent colour uses a deeper
+   shade of it (rule further down). */
+:root[data-theme="light"] {
+  --page: #faf7f2;
+  --surface: #ffffff;
+  --raised: #fff8ee;
+  --ink: #181c23;                        /* Midnight Black */
+  --ink-2: #464a46;
+  --muted: #6d706b;                      /* First Light 03 */
+  --line: #ebe5da;
+  --axis: #d0cfc8;                       /* Med Gray */
+  --accent: #ffad28;                     /* Sunset Orange */
+  --accent-2: #e8424c;                   /* Genpact Coral, a shade deeper so labels read on white */
+  --accent-3: #c26b00;
+  --work: #a35f00;
+  --series-2: #ff4f59;                   /* Genpact Coral */
+  --good: #1f9d6b;
+  --good-ink: #12784f;
+  --warn: #b5650a;
+  --bad: #e5404a;
+  --chip: #f5efe5;
+  --accent-soft: #fff2df;                /* Sunrise Cream */
+  --on-accent: #181c23;
+  --well: rgb(24 28 35 / 0.035);
+  --brand-orange: #ffad28;
+  --glow: 0 10px 40px -12px rgb(255 173 40 / 0.55);
+  color-scheme: light;
+}
+:root[data-theme="light"] [class*="text-[var(--accent)]"] { color: #a35f00; }
+:root[data-theme="light"] .glass { box-shadow: 0 1px 2px rgb(24 28 35 / 0.04); }
+:root[data-theme="light"] .aurora.a1 { background: rgb(255 173 40 / 0.16); }
+:root[data-theme="light"] .aurora.a2 { background: rgb(255 79 89 / 0.06); }
 
 body {
   background: var(--page);
@@ -44,7 +82,7 @@ h1, h2 { font-weight: 700; text-wrap: balance; }
 p { text-wrap: pretty; }
 .tabular { font-variant-numeric: tabular-nums; }
 pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-::selection { background: rgb(106 109 255 / 0.35); }
+::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 
 /* Screen titles: plain white, bold, tight, as on the Onyx pages. */
 .screen header h1 { font-size: clamp(1.9rem, 3.2vw, 2.6rem); line-height: 1.06; letter-spacing: -0.03em; font-weight: 700; color: var(--ink); }
@@ -59,17 +97,17 @@ pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospac
   border: 1px solid var(--line);
 }
 .glow-hover { transition: border-color .25s, box-shadow .3s, transform .25s; }
-.glow-hover:hover { border-color: var(--axis); box-shadow: 0 18px 50px -24px rgb(106 109 255 / 0.45); }
+.glow-hover:hover { border-color: var(--axis); box-shadow: 0 18px 50px -24px color-mix(in srgb, var(--accent) 45%, transparent); }
 
 /* Buttons: pills. Primary is solid indigo with a soft glow; plain buttons are outlined. */
 .btn-primary {
   background: var(--accent);
-  color: #ffffff !important;
+  color: var(--on-accent) !important;
   border-radius: 9999px !important;
-  box-shadow: 0 10px 40px -8px rgb(106 109 255 / 0.55);
+  box-shadow: 0 10px 40px -8px color-mix(in srgb, var(--accent) 55%, transparent);
   transition: transform .15s, box-shadow .3s, background .2s;
 }
-.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 16px 50px -8px rgb(106 109 255 / 0.7); }
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 16px 50px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
 .btn-pill { border-radius: 9999px !important; }
 
 /* ------------------------------------------------------------------ background */
@@ -97,7 +135,8 @@ pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospac
 .dash-flow { stroke-dasharray: 4 8; animation: dashFlow 1.2s linear infinite; }
 @keyframes dashFlow { to { stroke-dashoffset: -12; } }
 
-* { scrollbar-width: thin; scrollbar-color: #3a3a44 transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--axis) transparent; }
+body, .glass, aside { transition: background-color .3s, color .3s, border-color .3s; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }

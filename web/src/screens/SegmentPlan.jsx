@@ -43,7 +43,7 @@ export default function SegmentPlan({ go }) {
         <div className="flex rounded-full border border-[var(--axis)] p-0.5 text-sm">
           {tabs.map(([k, l]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
-              className={`btn-pill px-4 py-1.5 transition ${tab === k ? "bg-[var(--accent)] text-white" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
+              className={`btn-pill px-4 py-1.5 transition ${tab === k ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-2)] hover:text-[var(--ink)]"}`}>{l}</button>
           ))}
         </div>
         {[1, 2].map((c) => (
@@ -97,7 +97,7 @@ function SegmentTab({ p }) {
               return (
                 <motion.button key={b + a} type="button" whileHover={{ scale: 1.03 }} onClick={() => setPick(on ? null : name)}
                   className={`rounded-xl border p-3 text-left transition ${on ? "border-[var(--accent-2)]" : "border-[var(--line)] hover:border-[var(--axis)]"}`}
-                  style={{ background: `rgba(106,109,255,${0.08 + 0.5 * (c.physicians / max)})` }}>
+                  style={{ background: `color-mix(in srgb, var(--accent) ${Math.round(100 * (0.08 + 0.5 * (c.physicians / max)))}%, transparent)` }}>
                   <div className="display tabular text-2xl font-bold">{num(c.physicians)}</div>
                   <div className="text-[11px] text-[var(--ink-2)]">responsiveness {num(c.responsiveness)}</div>
                 </motion.button>
@@ -112,7 +112,7 @@ function SegmentTab({ p }) {
           {[["Potential", "Specialty weighting × the brick's market size × practice size against similar practices. Physician-level prescribing is not available in Europe, so potential is estimated from these."],
             ["Adoption", "Journey stage, from curiosity to advocacy, from the brand's segmentation."],
             ["Responsiveness", "The physician's own response rate over the last 12 months, shrunk towards their market's average when they have few touches. It also gives each physician's best channel."]].map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-[var(--line)] bg-black/20 p-3"><div className="font-semibold text-[var(--accent-2)]">{t}</div><div className="mt-1 text-[var(--ink-2)]">{d}</div></div>
+            <div key={t} className="rounded-xl border border-[var(--line)] bg-[var(--well)] p-3"><div className="font-semibold text-[var(--accent-2)]">{t}</div><div className="mt-1 text-[var(--ink-2)]">{d}</div></div>
           ))}
           <p className="text-xs text-[var(--muted)]">A physician changes potential band only when their score is clearly past the boundary (5 points), so segments stay stable from one quarter to the next. Bands use the same shares as today's tiers (20%, 35%, 45%).</p>
         </div>

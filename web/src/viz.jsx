@@ -15,7 +15,7 @@ export function PilotConsole({ pilot, actions, milestones = [8, 26], note }) {
   const target = running ? pilot.target : null;
   return (
     <div className="glass relative overflow-hidden rounded-2xl p-5">
-      {running && <motion.div aria-hidden className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-[rgba(106,109,255,0.10)] to-transparent"
+      {running && <motion.div aria-hidden className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-[color-mix(in_srgb,_var(--accent)_10%,_transparent)] to-transparent"
         animate={{ x: ["-100%", "300%"] }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }} />}
       <div className="relative flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-4">
@@ -40,8 +40,8 @@ export function PilotConsole({ pilot, actions, milestones = [8, 26], note }) {
             return (
               <motion.div key={i} className="h-2.5 flex-1 rounded-sm"
                 animate={{
-                  backgroundColor: state === "done" ? "#6a6dff" : state === "now" ? "#ff8f7a" : state === "queued" ? "rgba(255,143,122,0.25)" : "rgba(140,140,160,0.10)",
-                  boxShadow: state === "done" ? "0 0 8px rgba(106,109,255,0.6)" : "0 0 0 rgba(0,0,0,0)",
+                  backgroundColor: state === "done" ? "var(--accent)" : state === "now" ? "var(--accent-2)" : state === "queued" ? "color-mix(in srgb, var(--accent-2) 25%, transparent)" : "rgba(140,140,160,0.10)",
+                  boxShadow: state === "done" ? "0 0 8px color-mix(in srgb, var(--accent) 60%, transparent)" : "0 0 0 rgba(0,0,0,0)",
                   opacity: state === "now" ? [1, 0.4, 1] : 1,
                 }}
                 transition={{ duration: state === "now" ? 1 : 0.4, repeat: state === "now" ? Infinity : 0, delay: state === "done" ? i * 0.015 : 0 }} />
@@ -89,28 +89,28 @@ export function FeedbackLoop({ sent, accepted, dismissed, proposals, weeks }) {
   const S = 360, C = S / 2, R = 128;
   const pos = (deg) => ({ x: C + R * Math.cos((deg * Math.PI) / 180), y: C + R * Math.sin((deg * Math.PI) / 180) });
   const stations = [
-    { deg: -90, label: "Suggestions to reps", value: num(sent), color: "#6a6dff" },
-    { deg: 0, label: "Accepted", value: num(accepted), color: "#4fd1a1" },
-    { deg: 90, label: "Engine learns", value: `${num(proposals)} proposal${proposals === 1 ? "" : "s"}`, color: "#ffd0a8" },
-    { deg: 180, label: "Dismissed, with a reason", value: num(dismissed), color: "#ff6b6b" },
+    { deg: -90, label: "Suggestions to reps", value: num(sent), color: "var(--accent)" },
+    { deg: 0, label: "Accepted", value: num(accepted), color: "var(--good)" },
+    { deg: 90, label: "Engine learns", value: `${num(proposals)} proposal${proposals === 1 ? "" : "s"}`, color: "var(--accent-3)" },
+    { deg: 180, label: "Dismissed, with a reason", value: num(dismissed), color: "var(--bad)" },
   ];
   const circle = `M ${C} ${C - R} A ${R} ${R} 0 1 1 ${C - 0.01} ${C - R}`;
   const share = accepted / Math.max(accepted + dismissed, 1);
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[22rem]">
       <svg viewBox={`0 0 ${S} ${S}`} className="absolute inset-0 h-full w-full" aria-hidden>
-        <circle cx={C} cy={C} r={R} fill="none" stroke="#6a6dff" strokeOpacity="0.12" strokeWidth="14" />
-        <circle cx={C} cy={C} r={R} fill="none" stroke="#6a6dff" strokeOpacity="0.55" strokeWidth="1.4" className="dash-flow" />
+        <circle cx={C} cy={C} r={R} fill="none" stroke="var(--accent)" strokeOpacity="0.12" strokeWidth="14" />
+        <circle cx={C} cy={C} r={R} fill="none" stroke="var(--accent)" strokeOpacity="0.55" strokeWidth="1.4" className="dash-flow" />
         {Array.from({ length: 14 }, (_, i) => {
           const ok = (i / 14) < share;
           return (
-            <circle key={i} r={i % 4 === 0 ? 4 : 2.6} fill={ok ? "#4fd1a1" : "#ff6b6b"} style={{ filter: `drop-shadow(0 0 5px ${ok ? "#4fd1a1" : "#ff6b6b"})` }}>
+            <circle key={i} r={i % 4 === 0 ? 4 : 2.6} fill={ok ? "var(--good)" : "var(--bad)"} style={{ filter: `drop-shadow(0 0 5px ${ok ? "var(--good)" : "var(--bad)"})` }}>
               <animateMotion dur="9s" repeatCount="indefinite" begin={`${-i * (9 / 14)}s`} path={circle} />
             </circle>
           );
         })}
-        <g className="spin-slow"><circle cx={C} cy={C} r="62" fill="none" stroke="#ff8f7a" strokeOpacity="0.4" strokeDasharray="3 9" strokeWidth="2" /></g>
-        <circle cx={C} cy={C} r="50" fill="#0b0b0f" stroke="#6a6dff" strokeOpacity="0.4" />
+        <g className="spin-slow"><circle cx={C} cy={C} r="62" fill="none" stroke="var(--accent-2)" strokeOpacity="0.4" strokeDasharray="3 9" strokeWidth="2" /></g>
+        <circle cx={C} cy={C} r="50" fill="var(--page)" stroke="var(--accent)" strokeOpacity="0.4" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <div className="display tabular text-3xl font-semibold text-gradient"><CountUp value={`${num(weeks)}`} /></div>
@@ -149,18 +149,18 @@ export function ReturnDial({ value, label = "return on the fee" }) {
     <div className="relative mx-auto w-full max-w-sm">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" aria-label={`${label}: ${num(value, 2)} times`}>
         <defs>
-          <linearGradient id="dial" x1="0" x2="1"><stop offset="0%" stopColor="#ff6b6b" /><stop offset="33%" stopColor="#ffd0a8" /><stop offset="45%" stopColor="#4fd1a1" /><stop offset="100%" stopColor="#6a6dff" /></linearGradient>
+          <linearGradient id="dial" x1="0" x2="1"><stop offset="0%" stopColor="var(--bad)" /><stop offset="33%" stopColor="var(--accent-3)" /><stop offset="45%" stopColor="var(--good)" /><stop offset="100%" stopColor="var(--accent)" /></linearGradient>
         </defs>
         <path d={arc(0, max)} fill="none" stroke="var(--chip)" strokeWidth="16" strokeLinecap="round" />
         <motion.path d={arc(0, max)} fill="none" stroke="url(#dial)" strokeWidth="16" strokeLinecap="round" pathLength="1"
-          initial={{ pathLength: 0 }} animate={{ pathLength: v / max }} transition={{ duration: 1.6, ease: EASE }} style={{ filter: "drop-shadow(0 0 8px rgba(106,109,255,0.5))" }} />
+          initial={{ pathLength: 0 }} animate={{ pathLength: v / max }} transition={{ duration: 1.6, ease: EASE }} style={{ filter: "drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 50%, transparent))" }} />
         {[0, 1, 2, 3].map((t) => {
           const [x, y] = pt(t, R - 26);
-          return <text key={t} x={x} y={y + 4} textAnchor="middle" fontSize="11" fill={t === 1 ? "#e8eefc" : "var(--muted)"}>{t}×</text>;
+          return <text key={t} x={x} y={y + 4} textAnchor="middle" fontSize="11" fill={t === 1 ? "var(--ink)" : "var(--muted)"}>{t}×</text>;
         })}
         {(() => { const [x1, y1] = pt(1, R - 12), [x2, y2] = pt(1, R + 12); return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth="2" />; })()}
-        <motion.line x1={CX} y1={CY} x2={nx} y2={ny} stroke="#e8eefc" strokeWidth="3" strokeLinecap="round" style={{ filter: "drop-shadow(0 0 4px #fff)" }} />
-        <circle cx={CX} cy={CY} r="8" fill="#e8eefc" />
+        <motion.line x1={CX} y1={CY} x2={nx} y2={ny} stroke="var(--ink)" strokeWidth="3" strokeLinecap="round" style={{ filter: "drop-shadow(0 0 4px #fff)" }} />
+        <circle cx={CX} cy={CY} r="8" fill="var(--ink)" />
       </svg>
       <div className="-mt-2 text-center">
         <div className={`display tabular text-4xl font-semibold ${good ? "text-[var(--good-ink)]" : "text-[var(--bad)]"}`}><CountUp value={`${num(value, 2)}×`} /></div>
@@ -191,18 +191,18 @@ export function GapChart({ data, height = 280 }) {
       <div className="mb-2 flex flex-wrap gap-4 text-sm text-[var(--ink-2)]">
         <span className="inline-flex items-center gap-2"><span className="h-0.5 w-5 rounded bg-[var(--accent)]" />Test: the engine</span>
         <span className="inline-flex items-center gap-2"><span className="h-0.5 w-5 rounded bg-[var(--series-2)]" />Control: today's plan</span>
-        <span className="inline-flex items-center gap-2"><span className="h-3 w-5 rounded-sm bg-[rgba(79,209,161,0.25)]" />The gap: the engine's effect</span>
+        <span className="inline-flex items-center gap-2"><span className="h-3 w-5 rounded-sm bg-[color-mix(in_srgb,_var(--good)_25%,_transparent)]" />The gap: the engine's effect</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Movicol units index, test against control"
         onMouseLeave={() => setHi(null)}
         onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); const i = Math.round(((((e.clientX - r.left) / r.width) * W - L) / (W - L - R)) * (data.length - 1)); setHi(i >= 0 && i < data.length ? i : null); }}>
-        {p0 >= 0 && <rect x={px(p0) - 8} y={T} width={px(data.length - 1) - px(p0) + 16} height={H - T - B} fill="rgba(255,143,122,0.07)" rx="6" />}
-        {p0 >= 0 && <text x={px(p0) - 2} y={T + 12} fontSize="11" fill="#ff8f7a">Pilot</text>}
+        {p0 >= 0 && <rect x={px(p0) - 8} y={T} width={px(data.length - 1) - px(p0) + 16} height={H - T - B} fill="color-mix(in srgb, var(--accent-2) 7%, transparent)" rx="6" />}
+        {p0 >= 0 && <text x={px(p0) - 2} y={T + 12} fontSize="11" fill="var(--accent-2)">Pilot</text>}
         {ticks.map((t, i) => (
           <g key={i}><line x1={L} x2={W - R} y1={py(t)} y2={py(t)} stroke="var(--line)" /><text x={L - 8} y={py(t) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">{num(t)}</text></g>
         ))}
         {data.map((d, i) => (i % Math.ceil(data.length / 5) === 0 || i === data.length - 1) && <text key={i} x={px(i)} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--muted)">{d.month}</text>)}
-        {gap && <motion.path d={gap} fill="rgba(79,209,161,0.22)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 0.8 }} />}
+        {gap && <motion.path d={gap} fill="color-mix(in srgb, var(--good) 22%, transparent)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 0.8 }} />}
         {[["control", "var(--series-2)"], ["test", "var(--accent)"]].map(([k, c]) => (
           <motion.path key={k + data.length} d={line(k)} fill="none" stroke={c} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round"
             initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.6, ease: [0.4, 0, 0.2, 1] }} style={{ filter: `drop-shadow(0 0 6px ${c})` }} />
@@ -216,8 +216,8 @@ export function GapChart({ data, height = 280 }) {
         {hi !== null && (
           <g>
             <line x1={px(hi)} x2={px(hi)} y1={T} y2={H - B} stroke="var(--axis)" />
-            <circle cx={px(hi)} cy={py(data[hi].test)} r="5" fill="var(--accent)" stroke="#0b0b0f" strokeWidth="2" />
-            <circle cx={px(hi)} cy={py(data[hi].control)} r="5" fill="var(--series-2)" stroke="#0b0b0f" strokeWidth="2" />
+            <circle cx={px(hi)} cy={py(data[hi].test)} r="5" fill="var(--accent)" stroke="var(--page)" strokeWidth="2" />
+            <circle cx={px(hi)} cy={py(data[hi].control)} r="5" fill="var(--series-2)" stroke="var(--page)" strokeWidth="2" />
           </g>
         )}
       </svg>
